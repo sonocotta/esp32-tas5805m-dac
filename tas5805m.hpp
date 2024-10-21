@@ -15,6 +15,8 @@
 #include "esp_system.h"
 #include "esp_log.h"
 
+#include "startup/tas5805m.h"
+
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define WRITE_BIT I2C_MASTER_WRITE /*!< I2C master write */
 #define READ_BIT I2C_MASTER_READ   /*!< I2C master read */
@@ -78,11 +80,6 @@
 #define TAS5805M_MISC_CONTROL_REGISTER 0x76
 #define TAS5805M_FAULT_CLEAR_REGISTER 0x78
 
-enum tas5805m_mode {
-    TAS5805M_STEREO,
-    TAS5805M_MONO
-};
-
 class tas5805m
 {
 private:
@@ -90,14 +87,16 @@ private:
 
 protected:
     esp_err_t _write_byte(uint8_t register_name, uint8_t value);
+    esp_err_t _write_bytes(uint8_t *reg, int regLen, uint8_t *data, int datalen);
     esp_err_t _read(uint8_t register_name, uint8_t *data_rd, size_t size);
     esp_err_t _read_byte(uint8_t register_name, uint8_t *data_rd);
+    esp_err_t _transmit_registers(const tas5805m_cfg_reg_t *conf_buf, int size);
 
 public:
     tas5805m(TwoWire *wire) : wire(wire){};
 
     esp_err_t init();
-    esp_err_t begin(tas5805m_mode mode = TAS5805M_STEREO);
+    esp_err_t begin();
     esp_err_t getFaultState(uint8_t *, uint8_t *, uint8_t *);
     esp_err_t clearFaultState();
  
