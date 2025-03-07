@@ -746,6 +746,46 @@ void tas5805m_decode_faults(TAS5805M_FAULT fault)
   }
 }
 
+static const char *tas5805m_map_fs_freq(TAS5805M_FS_FREQ freq)
+{
+    switch (freq)
+    {
+    case FS_FREQ_ERROR:
+        return "ERROR";
+    case FS_FREQ_8K:
+        return "8KHz";
+    case FS_FREQ_16K:
+        return "16KHz";
+    case FS_FREQ_32K:
+        return "32KHz";
+    case FS_FREQ_48K:
+        return "48KHz";
+    case FS_FREQ_96K:
+        return "96KHz";
+    case FS_FREQ_RESERVED:
+        return "RESERVED";
+    }
+}
+
+static const char *tas5805m_map_amp_state(TAS5805M_CTRL_STATE state)
+{
+    switch (state)
+    {
+    case TAS5805M_CTRL_PLAY:
+        return "PLAY";
+    case TAS5805M_CTRL_HI_Z:
+        return "HIGH-Z";
+    case TAS5805M_CTRL_SLEEP:
+        return "SLEEP";
+    case TAS5805M_CTRL_MUTE:
+        return "MUTE";
+    case TAS5805M_CTRL_DEEP_SLEEP:
+        return "DEEP SLEEP";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 // esp_err_t tas5805m_ctrl(audio_hal_codec_mode_t mode,
 //                         audio_hal_ctrl_t ctrl_state)
 // {

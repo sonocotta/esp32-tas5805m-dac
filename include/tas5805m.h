@@ -512,6 +512,11 @@ static const uint32_t tas5805m_volume[] = {
      */
     void tas5805m_decode_faults(TAS5805M_FAULT fault);
 
+    
+    static const char* tas5805m_map_amp_state(TAS5805M_CTRL_STATE state);
+    static const char* tas5805m_map_fs_freq(TAS5805M_FS_FREQ freq);
+
+
 #ifdef __cplusplus  
 }
 #endif
