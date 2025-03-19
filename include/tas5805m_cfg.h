@@ -18,12 +18,27 @@ extern "C"
 
 #define TAS5805M_ADDRESS 0x2D      /*!< 7-bit address with a 15k pull up resistor */
 
-// Power down pin
-#ifdef PIN_DAC_PWDN
-#define TAS5805M_GPIO_PDN PIN_DAC_PWDN
+// Fault pin
+#ifndef TAS5805M_GPIO_PDN
+#if CONFIG_IDF_TARGET_ESP32
+#define TAS5805M_GPIO_PDN GPIO_NUM_34
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TAS5805M_GPIO_PDN GPIO_NUM_18
 #else
-#define TAS5805M_GPIO_PDN GPIO_NUM_33 /*!< GPIO used for !PDN pin */
-#endif 
+#define TAS5805M_GPIO_PDN -1
+#endif
+#endif
+
+// Power down pin
+#ifndef TAS5805M_GPIO_PDN
+#if CONFIG_IDF_TARGET_ESP32
+#define TAS5805M_GPIO_PDN GPIO_NUM_33
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TAS5805M_GPIO_PDN GPIO_NUM_17
+#else
+#define TAS5805M_GPIO_PDN -1
+#endif
+#endif
 
 #define TAS5805M_GPIO_PDN_MASK ((1ULL << TAS5805M_GPIO_PDN))
 
