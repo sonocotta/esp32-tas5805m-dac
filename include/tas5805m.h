@@ -513,9 +513,22 @@ static const uint32_t tas5805m_volume[] = {
     void tas5805m_decode_faults(TAS5805M_FAULT fault);
 
     
+    /**
+     * @brief Map the TAS5805M_CTRL_STATE to a string
+     * 
+     * @param state: The state to map
+     * 
+     * @return The string representation of the state
+     */
     const char* tas5805m_map_amp_state(TAS5805M_CTRL_STATE state);
 
-    
+    /**
+     * @brief Map the TAS5805M_DAC_MODE to a string
+     * 
+     * @param mode: The mode to map
+     * 
+     * @return The string representation of the mode
+     */
     const char* tas5805m_map_fs_freq(TAS5805M_FS_FREQ freq);
 
 

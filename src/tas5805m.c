@@ -9,35 +9,35 @@
 #include "driver/i2c.h"
 #include "tas5805m.h"
 #include "tas5805m_cfg.h"
-#include "eq/tas5805m_eq.h"
+#include "../eq/tas5805m_eq.h"
 
 #if defined(CONFIG_TAS5805M_DSP_STEREO)
 #pragma message("tas5805m_2.0+basic config is used")
-#include "startup/tas5805m_2.0+basic.h"
+#include "../startup/tas5805m_2.0+basic.h"
 #elif defined(CONFIG_TAS5805M_DSP_MONO)
 #pragma message("tas5805m_1.0+basic config is used")
-#include "startup/tas5805m_1.0+basic.h"
+#include "../startup/tas5805m_1.0+basic.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_40)
 #pragma message("tas5805m_0.1+eq_40Hz_cutoff config is used")
-#include "startup/tas5805m_0.1+eq_40Hz_cutoff.h"
+#include "../startup/tas5805m_0.1+eq_40Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_60)
 #pragma message("tas5805m_0.1+eq_60Hz_cutoff config is used")
-#include "startup/tas5805m_0.1+eq_60Hz_cutoff.h"
+#include "../startup/tas5805m_0.1+eq_60Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_100)
 #pragma message("tas5805m_0.1+eq_100Hz_cutoff config is used")
-#include "startup/tas5805m_0.1+eq_100Hz_cutoff.h"
+#include "../startup/tas5805m_0.1+eq_100Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP)
 #pragma message("tas5805m_1.1+eq_60Hz_cutoff+mono config is used")
-#include "startup/tas5805m_1.1+eq_60Hz_cutoff+mono.h"
+#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+mono.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP_60_LEFT)
 #pragma message("tas5805m_1.1+eq_60Hz_cutoff+left config is used")
-#include "startup/tas5805m_1.1+eq_60Hz_cutoff+left.h"
+#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+left.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP_60_RIGHT)
 #pragma message("tas5805m_1.1+eq_60Hz_cutoff+right config is used")
-#include "startup/tas5805m_1.1+eq_60Hz_cutoff+right.h"
+#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+right.h"
 #else
 #pragma message("tas5805m_2.0+minimal config is used")
-#include "startup/tas5805m_2.0+minimal.h"
+#include "../startup/tas5805m_2.0+minimal.h"
 #endif
 
 static const char *TAG = "TAS5805";
