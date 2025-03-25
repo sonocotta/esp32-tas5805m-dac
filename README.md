@@ -154,10 +154,10 @@ if (ret != ESP_OK) {
 
 ### Setting and Getting Analog Gain
 
-To set the analog gain, use the `tas5805m_set_again` function (value in the [TAS5805M_MIN_GAIN..TAS5805M_MAX_GAIN] range, which is [0..31], representing 0.5 Db steps from 0Db to -15.5Db, default is 0):
+To set the analog gain, use the `tas5805m_set_again` function (value in the [TAS5805M_MAX_GAIN..TAS5805M_MIN_GAIN] range, which is [0..31], representing 0.5 Db steps from 0Db to -15.5Db, default is 0):
 
 ```cpp
-int gain = 10; // Gain level
+uint8_t gain = 10; // Gain level
 esp_err_t ret = tas5805m_set_again(gain);
 if (ret != ESP_OK) {
     ESP_LOGE("TAS5805M", "Failed to set analog gain");
@@ -167,7 +167,7 @@ if (ret != ESP_OK) {
 To get the current analog gain, use the `tas5805m_get_again` function:
 
 ```cpp
-int gain;
+uint8_t gain;
 esp_err_t ret = tas5805m_get_again(&gain);
 if (ret != ESP_OK) {
     ESP_LOGE("TAS5805M", "Failed to get analog gain");

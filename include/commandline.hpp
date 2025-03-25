@@ -6,10 +6,10 @@
 #include "esp_vfs_dev.h"
 
 #include "commands/command.hpp"
-#include "commands/tone.hpp"
 #ifdef CONFIG_DAC_TAS5805M
 #include "commands/ampstate.hpp"
 #include "commands/volume.hpp"
+#include "commands/volume100.hpp"
 #include "commands/dacmode.hpp"
 #include "commands/eq.hpp"
 #include "commands/modmode.hpp"
@@ -22,17 +22,18 @@ class CommandLine
 {
 private:
 
+
 #ifdef CONFIG_DAC_TAS5805M
     const static int commands_size = 9;
 #else
-    const static int commands_size = 1;
+    const static int commands_size = 0;
 #endif
 
     Command *commands[commands_size] = {
-        new ToneCommand(),
         #ifdef CONFIG_DAC_TAS5805M
         new AmpStateCommand(),
         new VolumeCommand(),
+        new Volume100Command(),
         new DacModeCommand(),
         new EqCommand(),
         new ModulationCommand(),
@@ -45,7 +46,7 @@ private:
     static inline const char *TAG = "CLI";
 
     // Read and process commands from Serial
-    void process_serial_commands()
+    static void process_serial_commands()
     {
         int ret;
         char *line = linenoise("CLI> ");
@@ -89,6 +90,28 @@ private:
 
 public:
 
+    static inline TaskHandle_t taskHandle = nullptr;
+
+    esp_err_t registerCommandHandler(Command *cmd)
+    {
+        esp_console_cmd_t cmd_struct = cmd->getCommand();
+        ESP_LOGI(TAG, "Registering command: %s", cmd->getName());
+        return esp_console_cmd_register(&cmd_struct);
+    }
+
+    esp_err_t addCommand(char* name, char* help, int (*func)(int argc, char **argv))
+    {
+        esp_console_cmd_t cmd = {
+            .command = name,
+            .help = help,
+            .hint = NULL,
+            .func = func,
+            .argtable = NULL
+        };
+
+        return esp_console_cmd_register(&cmd);
+    }
+
     void init()
     {
         esp_vfs_dev_uart_use_driver(0);
@@ -101,16 +124,51 @@ public:
 
         register_commands();
 
-        #ifdef CONFIG_DAC_TAS5805M
-        Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
-        Tas5805m.init();
-        #endif
-
-
         ESP_LOGI(TAG, "ESP32 Command Line Interface Ready! Type 'help' for a list of commands.");
     }
 
-    void loop()
+    static void taskLoop(void *pvParameters)
+    {
+        while (1)
+        {
+            loop();
+        }
+    }
+
+    void startLoopAsync(){
+        if (taskHandle == NULL)
+        {
+            ESP_LOGD(TAG, "Starting async commandline");
+            xTaskCreatePinnedToCore(
+                &taskLoop,   // Task function
+                "CmdlineTask",  // Task name
+                4096,        // Stack size
+                NULL,        // Task parameters (pass the instance)
+                10,           // Priority (10 is normal)
+                &taskHandle, // Task handle
+                1            // Run on Core 1
+            );
+        }
+        else
+        {
+            ESP_LOGI(TAG, "Async commandline already enabled");
+        }
+    }
+
+    void stopLoopAsync(){
+        if (taskHandle != NULL)
+        {
+            ESP_LOGI(TAG, "Disabling commanline");
+            vTaskDelete(taskHandle);
+            taskHandle = NULL;
+        }
+        else
+        {
+            ESP_LOGI(TAG, "Commandline already disabled");
+        }
+    }
+
+    static void loop()
     {
         process_serial_commands();
     };

@@ -8,15 +8,10 @@
 
 extern tas5805m Tas5805m;
 
-class VolumeCommand : public Command
+class Volume100Command : public Command
 {
 private:
-    static inline const char *TAG = "CMD.VOLUME";
-
-    static float volume_to_db(uint8_t volume)
-    {
-        return -(volume - TAS5805M_VOLUME_DEFAULT) / 2.0;
-    }
+    static inline const char *TAG = "CMD.VOL100";
 
     // Handler function for the "volume" command
     static int volume_command_handler(int argc, char **argv)
@@ -27,7 +22,7 @@ private:
             struct arg_end *end;
         } args;
 
-        args.volume = arg_int0(NULL, NULL, "<volume>", "Volume level");
+        args.volume = arg_int0(NULL, NULL, "<vol>", "Volume level");
         args.end = arg_end(1);
 
         int nerrors = arg_parse(argc, argv, (void **)&args);
@@ -40,20 +35,20 @@ private:
         if (args.volume->count == 0)
         {
             uint8_t volume;
-            Tas5805m.getVolume(&volume);
-            ESP_LOGI(TAG, "Current volume is %d, which is %f Db", volume, volume_to_db(volume));
+            Tas5805m.getVolume100(&volume);
+            ESP_LOGI(TAG, "Current volume is %d %", volume);
             return 0;
         }
 
         int volume = args.volume->ival[0];
-        if (volume < TAS5805M_VOLUME_MIN || volume > TAS5805M_VOLUME_MAX)
+        if (volume < TAS5805M_VOLUME_PCT_MIN || volume > TAS5805M_VOLUME_PCT_MAX)
         {
-            ESP_LOGI(TAG, "Invalid volume level! Must be between %d and %d.", TAS5805M_VOLUME_MIN, TAS5805M_VOLUME_MAX);
+            ESP_LOGI(TAG, "Invalid volume level! Must be between %d and %d.", TAS5805M_VOLUME_PCT_MIN, TAS5805M_VOLUME_PCT_MAX);
             return 1;
         }
 
-        ESP_LOGI(TAG, "Setting volume to %d% [%d..%d], which is %f Db", volume, TAS5805M_VOLUME_MIN, TAS5805M_VOLUME_MAX, volume_to_db(volume));
-        Tas5805m.setVolume(volume);
+        ESP_LOGI(TAG, "Setting volume to %d %", volume);
+        Tas5805m.setVolume100(volume);
         return 0;
     }
 
@@ -65,20 +60,20 @@ public:
     };
 
     static inline VolumeArgs volume_args = {
-        arg_int0(NULL, NULL, "[volume]", "Volume level [0..255], default 48 (+0 Db)"),
+        arg_int0(NULL, NULL, "[vol]", "Volume level, percent [0..124], default 100 (+0 Db)"),
         arg_end(1)
     };
 
     String getName()
     {
-        return "volume";
+        return "vol";
     };
 
     esp_console_cmd_t getCommand()
     {
         return {
-            .command = "volume",
-            .help = "Set the volume level of the amp. Usage: volume [volume], where volume is between 0 (+24 Db) and 255 (Mute), default 28 (+O db).",
+            .command = "vol",
+            .help = "Set the volume percent level of the amp. Usage: volume [volume], where volume is between 0 (Mute) and 124 (+24Db), default 100 (+O db).",
             .hint = NULL,
             .func = volume_command_handler,
             .argtable = &volume_args

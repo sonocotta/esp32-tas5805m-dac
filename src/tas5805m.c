@@ -12,32 +12,41 @@
 #include "../eq/tas5805m_eq.h"
 
 #if defined(CONFIG_TAS5805M_DSP_STEREO)
-#pragma message("tas5805m_2.0+basic config is used")
-#include "../startup/tas5805m_2.0+basic.h"
+  #pragma message("tas5805m_2.0+basic config is used")
+  #include "../startup/tas5805m_2.0+basic.h"
 #elif defined(CONFIG_TAS5805M_DSP_MONO)
-#pragma message("tas5805m_1.0+basic config is used")
-#include "../startup/tas5805m_1.0+basic.h"
+  #pragma message("tas5805m_1.0+basic config is used")
+  #include "../startup/tas5805m_1.0+basic.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_40)
-#pragma message("tas5805m_0.1+eq_40Hz_cutoff config is used")
-#include "../startup/tas5805m_0.1+eq_40Hz_cutoff.h"
+  #pragma message("tas5805m_0.1+eq_40Hz_cutoff config is used")
+  #include "../startup/tas5805m_0.1+eq_40Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_60)
-#pragma message("tas5805m_0.1+eq_60Hz_cutoff config is used")
-#include "../startup/tas5805m_0.1+eq_60Hz_cutoff.h"
+  #pragma message("tas5805m_0.1+eq_60Hz_cutoff config is used")
+  #include "../startup/tas5805m_0.1+eq_60Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_SUBWOOFER_100)
-#pragma message("tas5805m_0.1+eq_100Hz_cutoff config is used")
-#include "../startup/tas5805m_0.1+eq_100Hz_cutoff.h"
+  #pragma message("tas5805m_0.1+eq_100Hz_cutoff config is used")
+  #include "../startup/tas5805m_0.1+eq_100Hz_cutoff.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP)
-#pragma message("tas5805m_1.1+eq_60Hz_cutoff+mono config is used")
-#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+mono.h"
+  #pragma message("tas5805m_1.1+eq_60Hz_cutoff+mono config is used")
+  #include "../startup/tas5805m_1.1+eq_60Hz_cutoff+mono.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP_60_LEFT)
-#pragma message("tas5805m_1.1+eq_60Hz_cutoff+left config is used")
-#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+left.h"
+  #pragma message("tas5805m_1.1+eq_60Hz_cutoff+left config is used")
+  #include "../startup/tas5805m_1.1+eq_60Hz_cutoff+left.h"
 #elif defined(CONFIG_TAS5805M_DSP_BIAMP_60_RIGHT)
-#pragma message("tas5805m_1.1+eq_60Hz_cutoff+right config is used")
-#include "../startup/tas5805m_1.1+eq_60Hz_cutoff+right.h"
+  #pragma message("tas5805m_1.1+eq_60Hz_cutoff+right config is used")
+  #include "../startup/tas5805m_1.1+eq_60Hz_cutoff+right.h"
+#elif defined(CONFIG_TAS5805M_DSP_STEREO_LOUDNESS_1)
+  #pragma message("tas5805m_2.0+eq(+9db_20Hz)(-1Db_500Hz)(+3Db_8kHz)(+3Db_15kHz) config is used")
+  #include "../startup/custom/tas5805m_2.0+eq(+9db_20Hz)(-1Db_500Hz)(+3Db_8kHz)(+3Db_15kHz).h"
+#elif defined(CONFIG_TAS5805M_DSP_STEREO_LOUDNESS_2)
+  #pragma message("tas5805m_2.0+eq(+9db_20Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz) config is used")
+  #include "../startup/custom/tas5805m_2.0+eq(+9db_20Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz).h"
+#elif defined(CONFIG_TAS5805M_DSP_STEREO_LOUDNESS_3)
+  #pragma message("tas5805m_2.0+eq(+12db_30Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz) config is used")
+  #include "../startup/custom/tas5805m_2.0+eq(+12db_30Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz).h"
 #else
-#pragma message("tas5805m_2.0+minimal config is used")
-#include "../startup/tas5805m_2.0+minimal.h"
+  #pragma message("tas5805m_2.0+minimal config is used")
+  #include "../startup/tas5805m_2.0+minimal.h"
 #endif
 
 static const char *TAG = "TAS5805";
@@ -56,21 +65,11 @@ static const char *TAG = "TAS5805";
       tas5805m_write_byte(TAS5805M_REG_PAGE_SET, PAGE);                   \
     } while (0)
 
-// Last Volume gets updated after a change or before a mute
-int8_t currentVolume = 0;
-
 TAS5805_STATE tas5805m_state = {
     .is_muted = false,
     .state = TAS5805M_CTRL_PLAY,
-    .volume = TAS5805M_VOLUME_DEFAULT, // todo: can be redefined in startup sequence
-    .dac_mode = TAS5805M_DAC_MODE_BTL, // todo: can be redefined in startup sequence
-    .eq_is_on = false,                 // todo: can be redefined in startup sequence
     .eq_gain = { 0 },                  // todo: can be redefined in startup sequence
-    .a_gain = 0,                       // todo: can be redefined in startup sequence
-    .sw_freq = SW_FREQ_768K,           // todo: can be redefined in startup sequence
-    .bd_freq = SW_FREQ_80K,            // todo: can be redefined in startup sequence
-    .mod_mode = MOD_MODE_BD,           // todo: can be redefined in startup sequence
-    .mixer_mode = MIXER_STEREO,        // todo: can be redefined in startup sequence
+    .mixer_mode = MIXER_UNKNOWN,        // todo: can be redefined in startup sequence
 };
 
 /* Default I2C config */
@@ -141,7 +140,7 @@ esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
 // Writing of TAS5805M-Register
 esp_err_t tas5805m_write_byte(uint8_t register_name, uint8_t value)
 {
-  ESP_LOGD(TAG, "%s: 0x%02x <- 0x%02x", __func__, register_name, value);
+  ESP_LOGV(TAG, "%s: 0x%02x <- 0x%02x", __func__, register_name, value);
   int ret = 0;
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -196,6 +195,7 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
 {
   int i = 0;
   esp_err_t ret = ESP_OK;
+  ESP_LOGV(TAG, "%s enter", __func__);
   while (i < size)
   {
     switch (conf_buf[i].offset)
@@ -221,6 +221,7 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
     default:
       ret = tas5805m_write_bytes((unsigned char *)(&conf_buf[i].offset), 1,
                                  (unsigned char *)(&conf_buf[i].value), 1);
+      ESP_LOGV(TAG, "\t0x%02x <- 0x%02x", conf_buf[i].offset, conf_buf[i].value);
       break;
     }
     i++;
@@ -230,7 +231,7 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
     ESP_LOGE(TAG, "%s: Fail to load configuration to tas5805m", __func__);
     return ESP_FAIL;
   }
-  ESP_LOGD(TAG, "%s: wrote %d registers", __func__, i);
+  ESP_LOGD(TAG, "%s leave; wrote %d registers", __func__, i);
   return ret;
 }
 
@@ -257,16 +258,22 @@ esp_err_t tas5805m_init()
   //
   // I2S needs to be initialized before this happens
   //
+  // i2s_driver_start(TAS5805M_I2S_NUM);
+  // Once I2S clocks are stable, set the device into HiZ state and enable DSP via the I2C control port.
+  ESP_ERROR_CHECK(tas5805m_set_state(TAS5805M_CTRL_HI_Z));
+  vTaskDelay(20 / portTICK_RATE_MS);
+  // 5. Wait 5ms at least. Then initialize the DSP Coefficient, then set the device to Play state.
   int ret = tas5805m_transmit_registers(
       tas5805m_registers,
       sizeof(tas5805m_registers) / sizeof(tas5805m_registers[0]));
+  ESP_ERROR_CHECK(tas5805m_set_state(TAS5805M_CTRL_PLAY));
 
   TAS5805M_ASSERT(ret, "Fail to initialize tas5805m PA", ESP_FAIL);
   return ret;
 }
 
-// Setting the Volume
-esp_err_t tas5805m_set_volume(int vol)
+// Setting the Volume [0..255], 0 is mute, 255 is full blast
+esp_err_t tas5805m_set_volume(uint8_t vol)
 {
   esp_err_t ret = ESP_OK;
   if (vol < TAS5805M_VOLUME_MIN)
@@ -278,34 +285,77 @@ esp_err_t tas5805m_set_volume(int vol)
     vol = TAS5805M_VOLUME_MAX;
   }
 
-  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_VOLUME_PAGE);
+  // Linux driver implementation, seems to be troublesome (works only after stable I2S clock)
+  // TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_VOLUME_PAGE);
 
-  uint8_t left_volume_reg = TAS5805M_REG_LEFT_VOLUME;
-  ESP_LOGD(TAG, "%s: Setting volume to 0x%08x", __func__, tas5805m_volume[vol]);
-  ret = tas5805m_write_bytes((uint8_t *)&left_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
-  if (ret != ESP_OK)
-  {
-    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  }
+  // uint8_t left_volume_reg = TAS5805M_REG_LEFT_VOLUME;
+  // ESP_LOGD(TAG, "%s: Setting volume to 0x%08x", __func__, tas5805m_volume[vol]);
+  // ret = tas5805m_write_bytes((uint8_t *)&left_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
+  // if (ret != ESP_OK)
+  // {
+  //   ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  // }
 
-  uint8_t right_volume_reg = TAS5805M_REG_RIGHT_VOLUME;
-  ret = tas5805m_write_bytes((uint8_t *)&right_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
-  if (ret != ESP_OK)
-  {
-    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  }
+  // uint8_t right_volume_reg = TAS5805M_REG_RIGHT_VOLUME;
+  // ret = tas5805m_write_bytes((uint8_t *)&right_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
+  // if (ret != ESP_OK)
+  // {
+  //   ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  // }
 
-  tas5805m_state.volume = vol;
+  // tas5805m_state.volume = vol;
 
-  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO);
+  // TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO);
   
+  ret = tas5805m_write_byte(TAS5805M_DIG_VOL_CTRL, vol);
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  }
+
   return ret;
 }
 
-esp_err_t tas5805m_get_volume(int *vol)
+// Getting the Volume [0..255], 0 is mute, 255 is full blast
+esp_err_t tas5805m_get_volume(uint8_t *vol)
 {
-  *vol = tas5805m_state.volume; 
-  return ESP_OK;
+  esp_err_t ret = ESP_OK;
+  ret = tas5805m_read_byte(TAS5805M_DIG_VOL_CTRL, vol);
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  }
+  return ret;
+}
+
+// Setting the Volume [0..124], where 100 is 0 Db, 0 is mute
+esp_err_t tas5805m_set_volume_pct(uint8_t vol)
+{
+  esp_err_t ret = ESP_OK;
+  if (vol < TAS5805M_VOLUME_PCT_MIN)
+    vol = TAS5805M_VOLUME_PCT_MIN;
+  if (vol > TAS5805M_VOLUME_PCT_MAX)
+    vol = TAS5805M_VOLUME_PCT_MAX;
+
+  // Convert to 0..255
+  uint volume = vol == 0 ? TAS5805M_VOLUME_MAX : ( -2 * vol + 248 );
+  return tas5805m_set_volume(volume);
+}
+
+// Get the Volume [0..124], where 100 is 0 Db, 0 is mute
+esp_err_t tas5805m_get_volume_pct(uint8_t *vol)
+{
+  uint8_t volume;
+  esp_err_t ret = tas5805m_get_volume(&volume);
+  
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+    return ret;
+  }
+
+  *vol = volume >= 248 ? 0 : (248 - volume) / 2;
+  return ret;
 }
 
 esp_err_t tas5805m_deinit(void)
@@ -341,8 +391,20 @@ esp_err_t tas5805m_set_state(TAS5805M_CTRL_STATE state)
 
 esp_err_t tas5805m_get_dac_mode(TAS5805M_DAC_MODE *mode)
 {
-  *mode = tas5805m_state.dac_mode;
-  return ESP_OK;
+    uint8_t current_value;
+    esp_err_t err = tas5805m_read_byte(TAS5805M_DEVICE_CTRL_1, &current_value);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
+        return err;
+    }
+
+    if (current_value & (1 << 2)) {
+        *mode = TAS5805M_DAC_MODE_PBTL;
+    } else {
+        *mode = TAS5805M_DAC_MODE_BTL;
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t tas5805m_set_dac_mode(TAS5805M_DAC_MODE mode)
@@ -353,6 +415,7 @@ esp_err_t tas5805m_set_dac_mode(TAS5805M_DAC_MODE mode)
     uint8_t current_value;
     esp_err_t err = tas5805m_read_byte(TAS5805M_DEVICE_CTRL_1, &current_value);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
         return err;
     }
 
@@ -367,8 +430,6 @@ esp_err_t tas5805m_set_dac_mode(TAS5805M_DAC_MODE mode)
     int ret = tas5805m_write_byte(TAS5805M_DEVICE_CTRL_1, current_value);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-    } else {
-      tas5805m_state.dac_mode = mode;
     }
 
     return ret;
@@ -376,14 +437,26 @@ esp_err_t tas5805m_set_dac_mode(TAS5805M_DAC_MODE mode)
 
 esp_err_t tas5805m_get_eq(bool *enabled)
 {
-  *enabled = tas5805m_state.eq_is_on;
+  uint8_t value = 0;
+  esp_err_t err = tas5805m_read_byte(TAS5805M_DSP_MISC, &value);
+  if (err != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
+    return err;
+  }
+
+  if (value & 0x01) {
+    *enabled = false;
+  } else {
+    *enabled = true;
+  }
+
   return ESP_OK;
 }
 
 esp_err_t tas5805m_set_eq(bool enable)
 {
   ESP_LOGD(TAG, "%s: Setting EQ to %d", __func__, enable);
-  tas5805m_state.eq_is_on = enable;
   return tas5805m_write_byte(TAS5805M_DSP_MISC, enable ? TAS5805M_CTRL_EQ_ON : TAS5805M_CTRL_EQ_OFF);
 }
 
@@ -443,61 +516,79 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
 
 esp_err_t tas5805m_get_modulation_mode(TAS5805M_MOD_MODE *mode, TAS5805M_SW_FREQ *freq, TAS5805M_BD_FREQ *bd_freq)
 {
-  *mode = tas5805m_state.mod_mode;
-  *freq = tas5805m_state.sw_freq;
-  *bd_freq = tas5805m_state.bd_freq;
+  // Read the current value of the register
+  uint8_t current_value;
+  esp_err_t err = tas5805m_read_byte(TAS5805M_DEVICE_CTRL_1, &current_value);
+  if (err != ESP_OK) {
+      ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
+      return err;
+  }
+
+  // Extract bits 0-1
+  *mode = (current_value & 0b00000011);
+  // Extract bits 4-6
+  *freq = (current_value & 0b01110000);
+
+  // Read the BD frequency
+  err = tas5805m_read_byte(TAS5805M_ANA_CTRL, &current_value);
+  if (err != ESP_OK) {
+      ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
+      return err;
+  }
+
+  *bd_freq = (current_value & 0b01100000);
   return ESP_OK;
 }
 
 esp_err_t tas5805m_set_modulation_mode(TAS5805M_MOD_MODE mode, TAS5805M_SW_FREQ freq, TAS5805M_BD_FREQ bd_freq)
 {
-  ESP_LOGD(TAG, "%s: Setting modulation mode to %d, switching freq: %d", __func__, mode, freq);
+  ESP_LOGD(TAG, "%s: Setting modulation to %d, FSW: %d, Class-D bandwidth control: %d", __func__, mode, freq, bd_freq);
 
   // Read the current value of the register
   uint8_t current_value;
   esp_err_t err = tas5805m_read_byte(TAS5805M_DEVICE_CTRL_1, &current_value);
   if (err != ESP_OK) {
+      ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
       return err;
   }
 
   // Clear bits 0-1 and 4-6
   current_value &= ~((0x07 << 4) | (0x03 << 0));
-
   // Update bit 0-1 based on the mode
-  current_value |= ((mode & 0x03) << 0);  // Set bits 0-1
+  current_value |= mode & 0b00000011;  // Set bits 0-1
   // Update bits 4-6 based on sw freq
-  current_value |= ((freq & 0x07) << 4);  // Set bits 4-6
+  current_value |= freq & 0b01110000;  // Set bits 4-6
   
   // Write the updated value back to the register
   int ret = tas5805m_write_byte(TAS5805M_DEVICE_CTRL_1, current_value);
   if (ret != ESP_OK) {
       ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  } else {
-    tas5805m_state.mod_mode = mode;
-    tas5805m_state.sw_freq = freq;
-  }
+  } 
 
   // Set the BD frequency
   ret = tas5805m_write_byte(TAS5805M_ANA_CTRL, bd_freq);
   if (ret != ESP_OK) {
       ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  } else {
-    tas5805m_state.bd_freq = bd_freq;
-  }
+  } 
 
   return ret;
-
 }
 
-esp_err_t tas5805m_get_again(int *gain)
+esp_err_t tas5805m_get_again(uint8_t *gain)
 {
-  *gain = tas5805m_state.a_gain;
-  return ESP_OK;
+  int ret = ESP_OK;
+  ret = tas5805m_read_byte(TAS5805M_AGAIN, gain);
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  }
+  return ret;
 }
 
-esp_err_t tas5805m_set_again(int gain)
+esp_err_t tas5805m_set_again(uint8_t gain)
 {
-  if (gain < TAS5805M_MIN_GAIN || gain > TAS5805M_MAX_GAIN)
+  // Gain is inverted!
+  if (gain < TAS5805M_MAX_GAIN || gain > TAS5805M_MIN_GAIN)
   {
     ESP_LOGE(TAG, "%s: Invalid gain %d", __func__, gain);
     return ESP_ERR_INVALID_ARG;
@@ -508,10 +599,6 @@ esp_err_t tas5805m_set_again(int gain)
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  }
-  else
-  {
-    tas5805m_state.a_gain = gain;
   }
 
   return ret;

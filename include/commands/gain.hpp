@@ -14,17 +14,9 @@ class GainCommand : public Command
 
 private:
 
-    static char* gain_ix_to_string(int gain_ix)
+    static float gain_to_db(int gain_ix)
     {
-        static char buf[16];
-        int gain = -gain_ix * 5;
-        snprintf(buf, sizeof(buf), "%d.%ddB", gain / 10, gain % 10);
-        return buf;
-    }
-
-    static int int_to_gain_ix(int gain)
-    {
-        return -gain / 5;
+        return -gain_ix / 2.0;
     }
 
     // Handler function for the "gain" command
@@ -40,21 +32,20 @@ private:
 
         if (gain_args.gain->count == 0)
         {
-            int gain;
+            uint8_t gain;
             Tas5805m.getAnalogGain(&gain);
-            ESP_LOGI(TAG, "Current gain is %s", gain_ix_to_string(gain));
+            ESP_LOGI(TAG, "Current gain index is %d, which is %f Db", gain, gain_to_db(gain));
             return 0;
         }
 
-        int _gain = gain_args.gain->ival[0];
-        int gain_ix = int_to_gain_ix(_gain);
-        if (gain_ix < TAS5805M_MIN_GAIN || gain_ix > TAS5805M_MAX_GAIN)
+        int gain_ix = gain_args.gain->ival[0];
+        if (gain_ix < TAS5805M_MAX_GAIN || gain_ix > TAS5805M_MIN_GAIN)
         {
-            ESP_LOGI(TAG, "Invalid gain level! Must be between -155 and 0");
+            ESP_LOGI(TAG, "Invalid gain level! Must be between 0 and 31");
             return 1;
         }
 
-        ESP_LOGI(TAG, "Setting gain to %s", gain_ix_to_string(gain_ix)); 
+        ESP_LOGI(TAG, "Setting gain to %d, which is %f Db", gain_ix, gain_to_db(gain_ix)); 
         Tas5805m.setAnalogGain(gain_ix);
         return 0;
     }
@@ -67,7 +58,7 @@ public:
     };
 
     static inline GainArgs gain_args = {
-        arg_int0(NULL, NULL, "<gain>", "Gain level, -155..0, -155 = -15.5dB, 0 = 0dB"),
+        arg_int0(NULL, NULL, "<gain>", "Gain level, 0..31, 0 = 0dB, 31 = -15.5dB"),
         arg_end(1)};
 
     String getName()

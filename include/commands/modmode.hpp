@@ -53,7 +53,6 @@ private:
         case MOD_MODE_1SPW:
             return "1SPW";
         case MOD_MODE_HYBRID:
-
             return "HYBRID";
         case MOD_MODE_BD:
             return "BD";

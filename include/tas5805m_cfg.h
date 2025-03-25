@@ -1,5 +1,7 @@
 #pragma once
 
+#include "driver/i2s.h" 
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -18,14 +20,20 @@ extern "C"
 
 #define TAS5805M_ADDRESS 0x2D      /*!< 7-bit address with a 15k pull up resistor */
 
-// Fault pin
-#ifndef TAS5805M_GPIO_PDN
-#if CONFIG_IDF_TARGET_ESP32
-#define TAS5805M_GPIO_PDN GPIO_NUM_34
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TAS5805M_GPIO_PDN GPIO_NUM_18
+#if CONFIG_IDF_TARGET_ESP32C3
+#define GPIO_NUM_UNSET 63
 #else
-#define TAS5805M_GPIO_PDN -1
+#define GPIO_NUM_UNSET 255
+#endif
+
+// Fault pin
+#ifndef TAS5805M_GPIO_FAULT
+#if CONFIG_IDF_TARGET_ESP32
+#define TAS5805M_GPIO_FAULT GPIO_NUM_34
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TAS5805M_GPIO_FAULT GPIO_NUM_18
+#else
+#define TAS5805M_GPIO_FAULT GPIO_NUM_UNSET
 #endif
 #endif
 
@@ -36,11 +44,15 @@ extern "C"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define TAS5805M_GPIO_PDN GPIO_NUM_17
 #else
-#define TAS5805M_GPIO_PDN -1
+#define TAS5805M_GPIO_PDN GPIO_NUM_UNSET
 #endif
 #endif
-
 #define TAS5805M_GPIO_PDN_MASK ((1ULL << TAS5805M_GPIO_PDN))
+
+// I2S interface
+#ifndef TAS5805M_I2S_NUM
+#define TAS5805M_I2S_NUM I2S_NUM_0
+#endif
 
 // Startup sequence codes
 #define TAS5805M_CFG_META_SWITCH (255)

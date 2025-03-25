@@ -17,15 +17,22 @@ private:
     static int eq_command_handler(int argc, char **argv)
     {
         int nerrors = arg_parse(argc, argv, (void **)&eq_args);
-        if (nerrors > 0)
+        if (nerrors != 0)
         {
-            arg_print_errors(stderr, eq_args.end, "eq");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Error parsing arguments");
             return 1;
         }
-
+        
+        if (eq_args.action->count == 0)
+        {
+            bool eq_enabled;
+            Tas5805m.getEqEnabled(&eq_enabled);
+            ESP_LOGI(TAG, "EQ enable state is %d", eq_enabled);
+            return 0;
+        }
+        
         const char *action = eq_args.action->sval[0]; // Get action argument
-
+        
         if (strcmp(action, "on") == 0)
         {
             ESP_LOGI("CMD", "Enabling EQ");
@@ -102,7 +109,7 @@ public:
     } args;
 
     static inline EqArgs eq_args = {
-        arg_str1(NULL, NULL, "<on|off|set|get>", "Action: switch on/off or retrieve/update"),
+        arg_str0(NULL, NULL, "[<on|off|set|get>]", "Action: switch on/off or retrieve/update"),
         arg_int0(NULL, NULL, "[band]", "Band number (0..14)"),
         arg_int0(NULL, NULL, "[gain]", "Gain level (-15..15 Db, default: 0)"),
         arg_end(3)};
