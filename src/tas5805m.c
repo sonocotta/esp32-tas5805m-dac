@@ -72,38 +72,6 @@ TAS5805_STATE tas5805m_state = {
     .mixer_mode = MIXER_UNKNOWN,        // todo: can be redefined in startup sequence
 };
 
-/* Default I2C config */
-// static i2c_config_t i2c_cfg = {
-//     .mode = I2C_MODE_MASTER,
-//     .sda_pullup_en = GPIO_PULLUP_ENABLE,
-//     .scl_pullup_en = GPIO_PULLUP_ENABLE,
-//     .master.clk_speed = I2C_MASTER_FREQ_HZ,
-// };
-
-/*
- * Operate fuction of PA
- */
-// audio_hal_func_t AUDIO_CODEC_TAS5805M_DEFAULT_HANDLE = {
-//     .audio_codec_initialize = tas5805m_init,
-//     .audio_codec_deinitialize = tas5805m_deinit,
-//     .audio_codec_ctrl = tas5805m_ctrl,
-//     .audio_codec_config_iface = tas5805m_config_iface,
-//     .audio_codec_set_mute = tas5805m_set_mute,
-//     .audio_codec_set_volume = tas5805m_set_volume,
-//     .audio_codec_get_volume = tas5805m_get_volume,
-//     .audio_hal_lock = NULL,
-//     .handle = NULL,
-// };
-
-/* Init the I2C Driver */
-// void i2c_master_init()
-// {
-//   int i2c_master_port = I2C_MASTER_NUM;
-//   ESP_ERROR_CHECK(get_i2c_pins(I2C_NUM_0, &i2c_cfg));
-//   ESP_ERROR_CHECK(i2c_param_config(i2c_master_port, &i2c_cfg));
-//   ESP_ERROR_CHECK(i2c_driver_install(i2c_master_port, i2c_cfg.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
-// }
-
 /* Helper Functions */
 // Reading of TAS5805M-Register
 esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
@@ -237,7 +205,6 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
 
 /* Public API */
 // Inits the TAS5805M
-// change Settings in Menuconfig to enable Bridge-Mode
 esp_err_t tas5805m_init()
 {
   /// i2c_master_init();
@@ -285,28 +252,6 @@ esp_err_t tas5805m_set_volume(uint8_t vol)
     vol = TAS5805M_VOLUME_MAX;
   }
 
-  // Linux driver implementation, seems to be troublesome (works only after stable I2S clock)
-  // TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_VOLUME_PAGE);
-
-  // uint8_t left_volume_reg = TAS5805M_REG_LEFT_VOLUME;
-  // ESP_LOGD(TAG, "%s: Setting volume to 0x%08x", __func__, tas5805m_volume[vol]);
-  // ret = tas5805m_write_bytes((uint8_t *)&left_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
-  // if (ret != ESP_OK)
-  // {
-  //   ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  // }
-
-  // uint8_t right_volume_reg = TAS5805M_REG_RIGHT_VOLUME;
-  // ret = tas5805m_write_bytes((uint8_t *)&right_volume_reg, 1, (uint8_t *)&tas5805m_volume[vol], 4);
-  // if (ret != ESP_OK)
-  // {
-  //   ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-  // }
-
-  // tas5805m_state.volume = vol;
-
-  // TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO);
-  
   ret = tas5805m_write_byte(TAS5805M_DIG_VOL_CTRL, vol);
   if (ret != ESP_OK)
   {
@@ -872,16 +817,3 @@ const char* tas5805m_map_amp_state(TAS5805M_CTRL_STATE state)
         return "UNKNOWN";
     }
 }
-
-// esp_err_t tas5805m_ctrl(audio_hal_codec_mode_t mode,
-//                         audio_hal_ctrl_t ctrl_state)
-// {
-//   return ESP_OK;
-// }
-
-// esp_err_t tas5805m_config_iface(audio_hal_codec_mode_t mode,
-//                                 audio_hal_codec_i2s_iface_t *iface)
-// {
-//   // TODO
-//   return ESP_OK;
-// }, __func__);
