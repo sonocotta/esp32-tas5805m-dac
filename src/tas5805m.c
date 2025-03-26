@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #include "driver/i2c.h"
@@ -796,6 +795,8 @@ const char *tas5805m_map_fs_freq(TAS5805M_FS_FREQ freq)
         return "96KHz";
     case FS_FREQ_RESERVED:
         return "RESERVED";
+    default:
+        return "UNKNOWN";
     }
 }
 

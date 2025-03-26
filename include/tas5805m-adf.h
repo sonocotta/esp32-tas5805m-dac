@@ -1,8 +1,7 @@
-#ifdef _AUDIO_HAL_H_
-
 #ifndef _TAS5805M_ADF_H_
 #define _TAS5805M_ADF_H_
 
+#include "tas5805m.h"
 #include "audio_hal.h"
 
 #include "esp_err.h"
@@ -12,7 +11,7 @@
 #ifdef __cplusplus
 extern "C"
 {
-   #endif
+#endif
 
 #define I2C_MASTER_FREQ_HZ 400000   /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
@@ -95,13 +94,11 @@ extern "C"
    esp_err_t tas5805m_adf_ctrl(audio_hal_codec_mode_t mode,
       audio_hal_ctrl_t ctrl_state);
       
-      esp_err_t tas5805m_adf_config_iface(audio_hal_codec_mode_t mode,
+   esp_err_t tas5805m_adf_config_iface(audio_hal_codec_mode_t mode,
          audio_hal_codec_i2s_iface_t *iface);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif

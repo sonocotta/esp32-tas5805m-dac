@@ -8,15 +8,12 @@ extern "C"
 #endif
 
 /* Register Naming*/
-#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define WRITE_BIT I2C_MASTER_WRITE /*!< I2C master write */
 #define READ_BIT I2C_MASTER_READ   /*!< I2C master read */
 #define ACK_CHECK_EN 0x1           /*!< I2C master will check ack from slave*/
 #define ACK_CHECK_DIS 0x0          /*!< I2C master will not check ack from slave */
 #define ACK_VAL I2C_MASTER_ACK     /*!< I2C ack value */
 #define NACK_VAL I2C_MASTER_NACK   /*!< I2C nack value */
-
-#define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
 
 #define TAS5805M_ADDRESS 0x2D      /*!< 7-bit address with a 15k pull up resistor */
 

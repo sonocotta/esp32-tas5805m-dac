@@ -1,6 +1,6 @@
-#ifdef _AUDIO_HAL_H_
-
+#include "tas5805m-adf.h"
 #include "tas5805m.h"
+
 #include "esp_log.h"
 #include "driver/i2s.h"
 #include "driver/i2c.h"
@@ -17,13 +17,13 @@ static i2c_config_t i2c_cfg = {
  * Operate fuction of PA
  */
 audio_hal_func_t AUDIO_CODEC_TAS5805M_DEFAULT_HANDLE = {
-    .audio_codec_initialize = tas5805m_init,
-    .audio_codec_deinitialize = tas5805m_deinit,
-    .audio_codec_ctrl = tas5805m_ctrl,
-    .audio_codec_config_iface = tas5805m_config_iface,
-    .audio_codec_set_mute = tas5805m_set_mute,
-    .audio_codec_set_volume = tas5805m_set_volume,
-    .audio_codec_get_volume = tas5805m_get_volume,
+    .audio_codec_initialize = tas5805m_adf_init,
+    .audio_codec_deinitialize = tas5805m_adf_deinit,
+    .audio_codec_ctrl = tas5805m_adf_ctrl,
+    .audio_codec_config_iface = tas5805m_adf_config_iface,
+    .audio_codec_set_mute = tas5805m_adf_set_mute,
+    .audio_codec_set_volume = tas5805m_adf_set_volume,
+    .audio_codec_get_volume = tas5805m_adf_get_volume,
     .audio_hal_lock = NULL,
     .handle = NULL,
 };
@@ -70,7 +70,7 @@ esp_err_t tas5805m_adf_get_mute(bool *enabled)
     return tas5805m_get_mute(enabled);
 }
 
-esp_err_t tas5805m_ctrl(audio_hal_codec_mode_t mode,
+esp_err_t tas5805m_adf_ctrl(audio_hal_codec_mode_t mode,
                         audio_hal_ctrl_t ctrl_state)
 {
     // TODO: Implement
@@ -99,7 +99,7 @@ esp_err_t tas5805m_ctrl(audio_hal_codec_mode_t mode,
     return ESP_OK;
 }
 
-esp_err_t tas5805m_config_iface(audio_hal_codec_mode_t mode,
+esp_err_t tas5805m_adf_config_iface(audio_hal_codec_mode_t mode,
                                 audio_hal_codec_i2s_iface_t *iface)
 {
     // TODO: Implement
@@ -111,6 +111,3 @@ esp_err_t tas5805m_config_iface(audio_hal_codec_mode_t mode,
     // return tas5805m_set_i2s_format(codec, cfg->bits, cfg->fmt);
     return ESP_OK;
 }
-
-
-#endif

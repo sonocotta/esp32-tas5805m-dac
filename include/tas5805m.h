@@ -1,10 +1,9 @@
-#pragma once
+#ifndef _TAS5805M_H_
+#define _TAS5805M_H_
 
-// #include "audio_hal.h"
-
+#include <stdbool.h>
 #include "esp_err.h"
 #include "esp_log.h"
-// #include "board.h"
 
 #include "../eq/tas5805m_eq.h"
 
@@ -12,6 +11,9 @@
 extern "C"
 {
 #endif
+
+#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
+#define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
 
 #define I2C_MASTER_FREQ_HZ 400000   /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
@@ -470,4 +472,6 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
 
 #ifdef __cplusplus  
 }
+#endif
+
 #endif
