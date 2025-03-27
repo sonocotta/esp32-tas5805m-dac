@@ -1,5 +1,3 @@
-#ifdef _AUDIO_BOARD_H_ 
-
 #include "tas5805m-adf.h"
 #include "tas5805m.h"
 
@@ -113,5 +111,3 @@ esp_err_t tas5805m_adf_config_iface(audio_hal_codec_mode_t mode,
     // return tas5805m_set_i2s_format(codec, cfg->bits, cfg->fmt);
     return ESP_OK;
 }
-
-#endif

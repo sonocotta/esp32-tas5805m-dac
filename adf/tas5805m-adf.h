@@ -1,5 +1,3 @@
-#ifdef _AUDIO_BOARD_H_ 
-
 #ifndef _TAS5805M_ADF_H_
 #define _TAS5805M_ADF_H_
 
@@ -101,8 +99,6 @@ extern "C"
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif
