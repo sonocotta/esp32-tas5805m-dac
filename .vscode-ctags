@@ -1,0 +1,110 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/amalyshenko/prj/esp32-audio-dock/esp32-audio-dock/firmware/esp32-i2s-esp8266audio/.pio/libdeps/louder-lolin_d1_mini_32/esp32-tas5805m-dac/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+ACK_CHECK_DIS	tas5805m.hpp	/^#define ACK_CHECK_DIS /;"	d
+ACK_CHECK_EN	tas5805m.hpp	/^#define ACK_CHECK_EN /;"	d
+ACK_VAL	tas5805m.hpp	/^#define ACK_VAL /;"	d
+CFG_END_1	startup/tas5805m.h	/^#define CFG_END_1 /;"	d
+CFG_END_2	startup/tas5805m.h	/^#define CFG_END_2 /;"	d
+CFG_END_3	startup/tas5805m.h	/^#define CFG_END_3 /;"	d
+CFG_META_BURST	startup/tas5805m.h	/^#define CFG_META_BURST /;"	d
+CFG_META_DELAY	startup/tas5805m.h	/^#define CFG_META_DELAY /;"	d
+CFG_META_SWITCH	startup/tas5805m.h	/^#define CFG_META_SWITCH /;"	d
+I2C_MASTER_NUM	tas5805m.hpp	/^#define I2C_MASTER_NUM /;"	d
+I2C_TAS5805M_MASTER_NUM	tas5805m.hpp	/^#define I2C_TAS5805M_MASTER_NUM /;"	d
+NACK_VAL	tas5805m.hpp	/^#define NACK_VAL /;"	d
+READ_BIT	tas5805m.hpp	/^#define READ_BIT /;"	d
+TAG	tas5805m.cpp	/^static const char *TAG = "TAS5805";$/;"	v	typeref:typename:const char *	file:
+TAS5805M_ADDRESS	tas5805m.hpp	/^#define TAS5805M_ADDRESS /;"	d
+TAS5805M_ADR_PIN_CONFIG_REGISTER	tas5805m.hpp	/^#define TAS5805M_ADR_PIN_CONFIG_REGISTER /;"	d
+TAS5805M_ADR_PIN_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_ADR_PIN_CTRL_REGISTER /;"	d
+TAS5805M_AGAIN_REGISTER	tas5805m.hpp	/^#define TAS5805M_AGAIN_REGISTER /;"	d
+TAS5805M_ANA_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_ANA_CTRL_REGISTER /;"	d
+TAS5805M_ASSERT	tas5805m.cpp	/^#define TAS5805M_ASSERT(/;"	d	file:
+TAS5805M_AUTOMUTE_STATE_REGISTER	tas5805m.hpp	/^#define TAS5805M_AUTOMUTE_STATE_REGISTER /;"	d
+TAS5805M_AUTO_MUTE_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_AUTO_MUTE_CTRL_REGISTER /;"	d
+TAS5805M_AUTO_MUTE_TIME_REGISTER	tas5805m.hpp	/^#define TAS5805M_AUTO_MUTE_TIME_REGISTER /;"	d
+TAS5805M_BCK_MON_REGISTER	tas5805m.hpp	/^#define TAS5805M_BCK_MON_REGISTER /;"	d
+TAS5805M_BQ_WR_CTRL1_REGISTER	tas5805m.hpp	/^#define TAS5805M_BQ_WR_CTRL1_REGISTER /;"	d
+TAS5805M_CHANNEL_FORCE_HIZ_REGISTER	tas5805m.hpp	/^#define TAS5805M_CHANNEL_FORCE_HIZ_REGISTER /;"	d
+TAS5805M_CHAN_FAULT_REGISTER	tas5805m.hpp	/^#define TAS5805M_CHAN_FAULT_REGISTER /;"	d
+TAS5805M_CLKDET_STATUS_REGISTER	tas5805m.hpp	/^#define TAS5805M_CLKDET_STATUS_REGISTER /;"	d
+TAS5805M_CLOCK_DET_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_CLOCK_DET_CTRL_REGISTER /;"	d
+TAS5805M_DAC_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_DAC_CTRL_REGISTER /;"	d
+TAS5805M_DEVICE_CTRL_1_REGISTER	tas5805m.hpp	/^#define TAS5805M_DEVICE_CTRL_1_REGISTER /;"	d
+TAS5805M_DEVICE_CTRL_2_REGISTER	tas5805m.hpp	/^#define TAS5805M_DEVICE_CTRL_2_REGISTER /;"	d
+TAS5805M_DIE_ID_REGISTER	tas5805m.hpp	/^#define TAS5805M_DIE_ID_REGISTER /;"	d
+TAS5805M_DIG_VOL_CTRL2_REGISTER	tas5805m.hpp	/^#define TAS5805M_DIG_VOL_CTRL2_REGISTER /;"	d
+TAS5805M_DIG_VOL_CTRL3_REGISTER	tas5805m.hpp	/^#define TAS5805M_DIG_VOL_CTRL3_REGISTER /;"	d
+TAS5805M_DIG_VOL_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_DIG_VOL_CTRL_REGISTER /;"	d
+TAS5805M_DSP_MISC_REGISTER	tas5805m.hpp	/^#define TAS5805M_DSP_MISC_REGISTER /;"	d
+TAS5805M_FAULT_CLEAR_REGISTER	tas5805m.hpp	/^#define TAS5805M_FAULT_CLEAR_REGISTER /;"	d
+TAS5805M_FS_MON_REGISTER	tas5805m.hpp	/^#define TAS5805M_FS_MON_REGISTER /;"	d
+TAS5805M_GLOBAL_FAULT1_REGISTER	tas5805m.hpp	/^#define TAS5805M_GLOBAL_FAULT1_REGISTER /;"	d
+TAS5805M_GLOBAL_FAULT2_REGISTER	tas5805m.hpp	/^#define TAS5805M_GLOBAL_FAULT2_REGISTER /;"	d
+TAS5805M_GPIO_PDN	tas5805m.hpp	/^#define TAS5805M_GPIO_PDN /;"	d
+TAS5805M_GPIO_PDN_MASK	tas5805m.hpp	/^#define TAS5805M_GPIO_PDN_MASK /;"	d
+TAS5805M_I2C_PAGE_AUTO_INC_REGISTER	tas5805m.hpp	/^#define TAS5805M_I2C_PAGE_AUTO_INC_REGISTER /;"	d
+TAS5805M_I2S_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_I2S_CTRL_REGISTER /;"	d
+TAS5805M_MISC_CONTROL_REGISTER	tas5805m.hpp	/^#define TAS5805M_MISC_CONTROL_REGISTER /;"	d
+TAS5805M_OT_WARNING_REGISTER	tas5805m.hpp	/^#define TAS5805M_OT_WARNING_REGISTER /;"	d
+TAS5805M_PHASE_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_PHASE_CTRL_REGISTER /;"	d
+TAS5805M_PIN_CONTROL1_REGISTER	tas5805m.hpp	/^#define TAS5805M_PIN_CONTROL1_REGISTER /;"	d
+TAS5805M_PIN_CONTROL2_REGISTER	tas5805m.hpp	/^#define TAS5805M_PIN_CONTROL2_REGISTER /;"	d
+TAS5805M_POWER_STATE_REGISTER	tas5805m.hpp	/^#define TAS5805M_POWER_STATE_REGISTER /;"	d
+TAS5805M_RESET_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_RESET_CTRL_REGISTER /;"	d
+TAS5805M_SAP_CTRL1_REGISTER	tas5805m.hpp	/^#define TAS5805M_SAP_CTRL1_REGISTER /;"	d
+TAS5805M_SAP_CTRL2_REGISTER	tas5805m.hpp	/^#define TAS5805M_SAP_CTRL2_REGISTER /;"	d
+TAS5805M_SAP_CTRL3_REGISTER	tas5805m.hpp	/^#define TAS5805M_SAP_CTRL3_REGISTER /;"	d
+TAS5805M_SDOUT_SEL_REGISTER	tas5805m.hpp	/^#define TAS5805M_SDOUT_SEL_REGISTER /;"	d
+TAS5805M_SIG_CH_CTRL_REGISTER	tas5805m.hpp	/^#define TAS5805M_SIG_CH_CTRL_REGISTER /;"	d
+TAS5805M_SS_CTRL0_REGISTER	tas5805m.hpp	/^#define TAS5805M_SS_CTRL0_REGISTER /;"	d
+TAS5805M_SS_CTRL1_REGISTER	tas5805m.hpp	/^#define TAS5805M_SS_CTRL1_REGISTER /;"	d
+TAS5805M_SS_CTRL2_REGISTER	tas5805m.hpp	/^#define TAS5805M_SS_CTRL2_REGISTER /;"	d
+TAS5805M_SS_CTRL3_REGISTER	tas5805m.hpp	/^#define TAS5805M_SS_CTRL3_REGISTER /;"	d
+TAS5805M_SS_CTRL4_REGISTER	tas5805m.hpp	/^#define TAS5805M_SS_CTRL4_REGISTER /;"	d
+WRITE_BIT	tas5805m.hpp	/^#define WRITE_BIT /;"	d
+__anonc8c30ce40108	startup/tas5805m.h	/^typedef struct {$/;"	s
+_read	tas5805m.cpp	/^esp_err_t tas5805m::_read(uint8_t register_name, uint8_t *data_rd, size_t size)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+_read_byte	tas5805m.cpp	/^esp_err_t tas5805m::_read_byte(uint8_t register_name, uint8_t *data)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+_transmit_registers	tas5805m.cpp	/^esp_err_t tas5805m::_transmit_registers(const tas5805m_cfg_reg_t *conf_buf, int size) {$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+_write_byte	tas5805m.cpp	/^esp_err_t tas5805m::_write_byte(uint8_t register_name, uint8_t value)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+_write_bytes	tas5805m.cpp	/^esp_err_t tas5805m::_write_bytes(uint8_t *reg, int regLen, uint8_t *data, int datalen)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+begin	tas5805m.cpp	/^esp_err_t tas5805m::begin()$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+clearFaultState	tas5805m.cpp	/^esp_err_t tas5805m::clearFaultState() $/;"	f	class:tas5805m	typeref:typename:esp_err_t
+getFaultState	tas5805m.cpp	/^esp_err_t tas5805m::getFaultState(uint8_t *h70, uint8_t *h71, uint8_t *h72)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+getGain	tas5805m.cpp	/^esp_err_t tas5805m::getGain(uint8_t* volume)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+getVolume	tas5805m.cpp	/^esp_err_t tas5805m::getVolume(uint8_t* volume)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+init	tas5805m.cpp	/^esp_err_t tas5805m::init()$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+offset	startup/tas5805m.h	/^  uint8_t offset;$/;"	m	struct:__anonc8c30ce40108	typeref:typename:uint8_t
+setGain	tas5805m.cpp	/^esp_err_t tas5805m::setGain(uint8_t value)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+setVolume	tas5805m.cpp	/^esp_err_t tas5805m::setVolume(uint8_t value)$/;"	f	class:tas5805m	typeref:typename:esp_err_t
+tas5805m	tas5805m.hpp	/^    tas5805m(TwoWire *wire) : wire(wire){};$/;"	f	class:tas5805m
+tas5805m	tas5805m.hpp	/^class tas5805m$/;"	c
+tas5805m_cfg_reg_t	startup/tas5805m.h	/^} tas5805m_cfg_reg_t;$/;"	t	typeref:struct:__anonc8c30ce40108
+tas5805m_registers	startup/tas5805m_0.1+eq_100Hz_cutoff+drc.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_0.1+eq_100Hz_cutoff.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_0.1+eq_40Hz_cutoff.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_0.1+eq_60Hz_cutoff.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.0+3-band_drc+agl_-12db.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.0+3-band_drc.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.0+agl_-12db.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.0+basic.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.1+eq_60Hz_cutoff+left.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.1+eq_60Hz_cutoff+mono.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_1.1+eq_60Hz_cutoff+right.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_2.0+3-band_drc+agl_-12db.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_2.0+3-band_drc.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_2.0+agl_-12db.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_2.0+basic.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+tas5805m_registers	startup/tas5805m_2.0+minimal.h	/^static const tas5805m_cfg_reg_t tas5805m_registers[] = {$/;"	v	typeref:typename:const tas5805m_cfg_reg_t[]
+value	startup/tas5805m.h	/^  uint8_t value;$/;"	m	struct:__anonc8c30ce40108	typeref:typename:uint8_t
+wire	tas5805m.hpp	/^    TwoWire *wire;$/;"	m	class:tas5805m	typeref:typename:TwoWire *
