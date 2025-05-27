@@ -41,19 +41,19 @@ The `tas5805m.h` is a low-level driver with minimum dependencies (it uses only e
 
 I've implemented a `tas5805m.hpp` wrapper, that I'm primarily using in the Arduino code, so it becomes pretty easy:
 
-    ```cpp
-    #include <tas5805m.hpp>
-    tas5805m Tas5805m(&Wire);
-    ```
+```cpp
+#include <tas5805m.hpp>
+tas5805m Tas5805m(&Wire);
+```
 
-    ```cpp
-    const int sampleRate = 16000;
-    const int bps = 16;
-    I2S.begin(I2S_PHILIPS_MODE, sampleRate, bps);
-    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
-    Tas5805m.init();
+```cpp
+const int sampleRate = 16000;
+const int bps = 16;
+I2S.begin(I2S_PHILIPS_MODE, sampleRate, bps);
+Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+Tas5805m.init();
 
-    ```
+```
 
 Next, the esp-adf component implementation was created specifically for [snapclient](https://github.com/sonocotta/esparagus-snapclient/) implementation, but it should work with other esp-adf code as well
 
