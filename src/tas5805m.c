@@ -9,6 +9,7 @@
 #include "tas5805m.h"
 #include "tas5805m_cfg.h"
 #include "../eq/tas5805m_eq.h"
+#include "../eq/tas5805m_eq_profiles.h"
 
 #if defined(CONFIG_TAS5805M_DSP_STEREO)
   #pragma message("tas5805m_2.0+basic config is used")
@@ -67,8 +68,9 @@ static const char *TAG = "TAS5805";
 TAS5805_STATE tas5805m_state = {
     .is_muted = false,
     .state = TAS5805M_CTRL_PLAY,
-    .eq_gain = { 0 },                  // todo: can be redefined in startup sequence
+    .eq_gain = { 0 },                   // todo: can be redefined in startup sequence
     .mixer_mode = MIXER_UNKNOWN,        // todo: can be redefined in startup sequence
+    .eq_profile = FLAT,                 // todo: can be redefined in startup sequence
 };
 
 /* Helper Functions */
@@ -448,12 +450,52 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
       ret = ret | tas5805m_write_byte(reg_value->offset, reg_value->value);
       if (ret != ESP_OK) { 
           ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, reg_value->offset); 
-      
       }          
   }   
   
   tas5805m_state.eq_gain[band] = gain;
                                                                       
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
+  return ret;
+}
+
+esp_err_t tas5805m_get_eq_profile(TAS5805M_EQ_PROFILE *profile)
+{
+  *profile = tas5805m_state.eq_profile;
+  return ESP_OK;
+}
+
+esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile)
+{
+  // Apply preset EQ gains for the selected profile
+  int current_page = 0; 
+  int ret = ESP_OK;
+  ESP_LOGD(TAG, "%s: Setting EQ profile to %d", __func__, profile);
+  
+  int x = (uint8_t)profile;
+  for (int i = 0; i < TAS5805M_EQ_PROFILE_REG_PER_STEP; i++) 
+  { 
+    const reg_sequence_eq *reg_value = &tas5805m_eq_profile_registers[x][i]; 
+    if (reg_value == NULL) {                                        
+        ESP_LOGW(TAG, "%s: NULL pointer encountered at row[%d]", __func__, i); 
+        continue;                                                   
+    }                
+      
+    if (reg_value->page != current_page) {                          
+        current_page = reg_value->page;                             
+        TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_EQ, reg_value->page); 
+    }                                                               
+                                                                    
+    ESP_LOGV(TAG, "+ %d: w 0x%x 0x%x", i, reg_value->offset, reg_value->value);
+    ret = ret | tas5805m_write_byte(reg_value->offset, reg_value->value);
+    if (ret != ESP_OK) { 
+        ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, reg_value->offset); 
+    }     
+  }
+
+  // Set the EQ profile
+  tas5805m_state.eq_profile = profile;
+
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;
 }
