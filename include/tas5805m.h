@@ -81,12 +81,39 @@ typedef struct {
     uint8_t ot_warn;
 } TAS5805M_FAULT;
 
+#define TAS5805M_EQ_PROFILES 21
+
+typedef enum {
+    FLAT           = 0,  // 0dB
+    LF_60HZ_CUTOFF = 1,  // Low Frequency 60Hz cutoff
+    LF_70HZ_CUTOFF = 2,  // Low Frequency 40Hz cutoff
+    LF_80HZ_CUTOFF = 3,  // Low Frequency 80Hz cutoff
+    LF_90HZ_CUTOFF = 4,  // Low Frequency 90Hz cutoff
+    LF_100HZ_CUTOFF = 5, // Low Frequency 100Hz cutoff
+    LF_110HZ_CUTOFF = 6, // Low Frequency 110Hz cutoff
+    LF_120HZ_CUTOFF = 7, // Low Frequency 120Hz cutoff
+    LF_130HZ_CUTOFF = 8, // Low Frequency 130Hz cutoff
+    LF_140HZ_CUTOFF = 9, // Low Frequency 140Hz cutoff
+    LF_150HZ_CUTOFF = 10, // Low Frequency 150Hz cutoff
+    HF_60HZ_CUTOFF = 11, // High Frequency 60Hz cutoff
+    HF_70HZ_CUTOFF = 12, // High Frequency 70Hz cutoff
+    HF_80HZ_CUTOFF = 13, // High Frequency 80Hz cutoff
+    HF_90HZ_CUTOFF = 14, // High Frequency 90Hz cutoff
+    HF_100HZ_CUTOFF = 15, // High Frequency 100Hz cutoff
+    HF_110HZ_CUTOFF = 16, // High Frequency 110Hz cutoff
+    HF_120HZ_CUTOFF = 17, // High Frequency 120Hz cutoff
+    HF_130HZ_CUTOFF = 18, // High Frequency 130Hz cutoff
+    HF_140HZ_CUTOFF = 19, // High Frequency 140Hz cutoff
+    HF_150HZ_CUTOFF = 20, // High Frequency 150Hz cutoff
+} TAS5805M_EQ_PROFILE;
+
 typedef struct {
     bool                     is_muted;
     bool                     is_powered;
     int8_t                   eq_gain[TAS5805M_EQ_BANDS];
     TAS5805M_CTRL_STATE      state;
     TAS5805M_MIXER_MODE      mixer_mode;
+    TAS5805M_EQ_PROFILE      eq_profile;
 } TAS5805_STATE;
 
 // Analog gain
@@ -134,7 +161,6 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
 #define TAS5805M_VOLUME_PCT_MIN	0               // Mute
 #define TAS5805M_VOLUME_PCT_DEFAULT	100         //  +0 Db
 #define TAS5805M_VOLUME_PCT_MAX	124             // +24 Db
-
 
 /**
      * @brief Power up and initialize TAS5805 codec chip
@@ -198,7 +224,6 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
      *     - ESP_FAIL
      */
     esp_err_t tas5805m_get_volume_pct(uint8_t *vol);
-
 
     /**
      * @brief Set TAS5805 mute or not
@@ -305,6 +330,28 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
      * 
     */
     esp_err_t tas5805m_set_eq_gain(int band, int gain);
+
+    /**
+     * @brief Get the current EQ profile of the TAS5805M
+     * 
+     * @param profile: Pointer to the profile variable
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_get_eq_profile(TAS5805M_EQ_PROFILE *profile);
+
+    /**
+     * @brief Set the EQ profile of the TAS5805M
+     * 
+     * @param profile: The EQ profile to set
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile);
 
     /**
      * @brief Get the current modulation mode of the TAS5805M
@@ -450,7 +497,6 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
      */
     void tas5805m_decode_faults(TAS5805M_FAULT fault);
 
-    
     /**
      * @brief Map the TAS5805M_CTRL_STATE to a string
      * 

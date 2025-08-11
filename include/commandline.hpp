@@ -12,6 +12,7 @@
 #include "commands/volume100.hpp"
 #include "commands/dacmode.hpp"
 #include "commands/eq.hpp"
+#include "commands/eqprofile.hpp"
 #include "commands/modmode.hpp"
 #include "commands/gain.hpp"
 #include "commands/mixer.hpp" 
@@ -24,7 +25,7 @@ private:
 
 
 #ifdef CONFIG_DAC_TAS5805M
-    const static int commands_size = 9;
+    const static int commands_size = 10;
 #else
     const static int commands_size = 0;
 #endif
@@ -36,6 +37,7 @@ private:
         new Volume100Command(),
         new DacModeCommand(),
         new EqCommand(),
+        new EqProfileCommand(),
         new ModulationCommand(),
         new GainCommand(),
         new MixerCommand(),

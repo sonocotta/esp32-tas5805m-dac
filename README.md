@@ -373,6 +373,62 @@ if (ret != ESP_OK) {
 }
 ```
 
+## EQ High-pass and Low-pass filer presets (Subwoofer and satellite profiles)
+
+Few presets were created to allow quick setup of Subwoofer/Satellite profiles for 2.1 or Bi-amp configuration. These cover 4-order High-pass and Low-pass filters, using 2 EQ bands, 2nd order Chebyshev filter type each. For HF profiles additional gain compenstaion were applied (3-rd EQ band) to flatten the response.
+
+These profiles are set as `TAS5805M_EQ_PROFILE` enum. Available profiles:
+
+| Number | Name      |
+|--------|-----------|
+| 0      | FLAT      |
+| 1      | LF_60HZ   |
+| 2      | LF_70HZ   |
+| 3      | LF_80HZ   |
+| 4      | LF_90HZ   |
+| 5      | LF_100HZ  |
+| 6      | LF_110HZ  |
+| 7      | LF_120HZ  |
+| 8      | LF_130HZ  |
+| 9      | LF_140HZ  |
+| 10     | LF_150HZ  |
+| 11     | HF_60HZ   |
+| 12     | HF_70HZ   |
+| 13     | HF_80HZ   |
+| 14     | HF_90HZ   |
+| 15     | HF_100HZ  |
+| 16     | HF_110HZ  |
+| 17     | HF_120HZ  |
+| 18     | HF_130HZ  |
+| 19     | HF_140HZ  |
+| 20     | HF_150HZ  |
+
+### Setting and Getting EQ Profile
+
+To get the current EQ profile:
+
+```cpp
+TAS5805M_EQ_PROFILE eq_profile;
+Tas5805m.getEqProfile(&eq_profile);
+ESP_LOGI("EQ", "Current EQ profile: %d", eq_profile);
+```
+
+To set the EQ profile:
+
+```cpp
+TAS5805M_EQ_PROFILE profile = LF_80HZ_CUTOFF; // For example, LF_80HZ
+Tas5805m.setEqProfile(profile);
+```
+
+You can also use the CLI command:
+
+```
+eqp get
+eqp set <profile_number>
+```
+
+TODO: At this moment all profiles are applied to both channels. For bi-amp it would be requires to apply them to LEFT and RIGHT channles individually.
+
 ## Modulation modes and switching frequency
 
 Both modulation scheme and switching frequency have an impact on power consumption / switching losses versus EMI noise. 
