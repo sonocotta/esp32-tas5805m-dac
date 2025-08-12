@@ -47,10 +47,33 @@ private:
             return 1;
         }
 
+        if (eq_args.channel->count == 0)
+        {
+            TAS5805M_EQ_PROFILE eq_profile_l, eq_profile_r;
+            Tas5805m.getEqProfile(TAS5805M_EQ_CHANNELS_LEFT, &eq_profile_l);
+            Tas5805m.getEqProfile(TAS5805M_EQ_CHANNELS_RIGHT, &eq_profile_r);
+            ESP_LOGI(TAG, "EQ profile num is %d (left), which is %s",
+                    eq_profile_l, tas5805m_eq_profile_names[eq_profile_l]);
+            ESP_LOGI(TAG, "EQ profile num is %d (right), which is %s",
+                    eq_profile_r, tas5805m_eq_profile_names[eq_profile_r]);
+            return 0;
+        }
+
+        TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT;
+        if (strcmp(eq_args.channel->sval[0], "r") == 0)
+        {
+            channel = TAS5805M_EQ_CHANNELS_RIGHT;
+        }
+        else if (strcmp(eq_args.channel->sval[0], "l") != 0)
+        {
+            ESP_LOGE(TAG, "Invalid channel '%s', must be 'l' or 'r'", eq_args.channel->sval[0]);
+            return 1;
+        }
+
         if (eq_args.profile->count == 0)
         {
             TAS5805M_EQ_PROFILE eq_profile;
-            Tas5805m.getEqProfile(&eq_profile);
+            Tas5805m.getEqProfile(channel, &eq_profile);
             ESP_LOGI(TAG, "EQ profile num is %d, which is %s", eq_profile,
                     tas5805m_eq_profile_names[eq_profile]);
             return 0;
@@ -63,9 +86,9 @@ private:
             return ESP_FAIL;
         }
 
-        ESP_LOGI("CMD", "Setting EQ profile #%d, which is %s", profile,
+        ESP_LOGI("CMD", "Setting EQ profile (%d) #%d, which is %s", channel, profile,
                     tas5805m_eq_profile_names[profile]);
-        Tas5805m.setEqProfile(static_cast<TAS5805M_EQ_PROFILE>(profile));
+        Tas5805m.setEqProfile(channel, static_cast<TAS5805M_EQ_PROFILE>(profile));
 
         return 0;
     }
@@ -74,13 +97,15 @@ public:
 
     struct EqProfileArgs
     {
+        struct arg_str *channel;
         struct arg_int *profile;
         struct arg_end *end;
     } args;
 
     static inline EqProfileArgs eq_args = {
+        arg_str0(NULL, NULL, "<l|r>", "Channel: left or right. If not in BIAMP mode, left applies to both channels"),
         arg_int0(NULL, NULL, "[profile]", "Profile number (0..19), 0 is flat, 1 is LF 60Hz, 2 is LF 70Hz, .. 10 is LF 150Hz, 11 is HF 60Hz, .. 20 is HF 150Hz"),
-        arg_end(1)};
+        arg_end(2)};
 
     String getName()
     {

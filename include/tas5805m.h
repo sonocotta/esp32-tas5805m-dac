@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
@@ -81,13 +81,18 @@ typedef enum {
     FS_FREQ_RESERVED  = 0b1000,
 } TAS5805M_FS_FREQ;
 
-
 typedef struct {
     uint8_t err0;
     uint8_t err1;
     uint8_t err2;
     uint8_t ot_warn;
 } TAS5805M_FAULT;
+
+typedef enum {
+    TAS5805M_EQ_CHANNELS_LEFT = 0x00,
+    TAS5805M_EQ_CHANNELS_RIGHT = 0x01,
+    TAS5805M_EQ_CHANNELS_BOTH = 0x00,
+} TAS5805M_EQ_CHANNELS;
 
 #define TAS5805M_EQ_PROFILES 21
 
@@ -118,10 +123,11 @@ typedef enum {
 typedef struct {
     bool                     is_muted;
     bool                     is_powered;
-    int8_t                   eq_gain[TAS5805M_EQ_BANDS];
+    int8_t                   eq_gain_l[TAS5805M_EQ_BANDS];
+    int8_t                   eq_gain_r[TAS5805M_EQ_BANDS];
     TAS5805M_CTRL_STATE      state;
     TAS5805M_MIXER_MODE      mixer_mode;
-    TAS5805M_EQ_PROFILE      eq_profile;
+    TAS5805M_EQ_PROFILE      eq_profile[2];
 } TAS5805_STATE;
 
 // Analog gain
@@ -341,7 +347,7 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
     esp_err_t tas5805m_set_eq_mode(TAS5805M_EQ_MODE mode);
 
     /** 
-     * @brief Get the current EQ gain of the TAS5805M
+     * @brief Get the current EQ gain of the TAS5805M for LEFT channel (applies to both channels, when configures as mirror)
      * 
      * @param band: The band to get the gain of
      * @param gain: Pointer to the gain variable
@@ -350,13 +356,39 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
     esp_err_t tas5805m_get_eq_gain(int band, int *gain);
 
     /** 
-     * @brief Set the EQ gain of the TAS5805M
+     * @brief Set the EQ gain of the TAS5805M for selected channel
+     * 
+     * @param band: The band to set the gain of
+     * @param gain: The gain to set
+     * @param channel: The channel to set the gain for
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_get_eq_gain_channel(TAS5805M_EQ_CHANNELS channel, int band, int *gain);
+
+    /** 
+     * @brief Set the EQ gain of the TAS5805M for LEFT channel (applies to both channels, when configures as mirror)
      * 
      * @param band: The band to set the gain of
      * @param gain: The gain to set
      * 
     */
     esp_err_t tas5805m_set_eq_gain(int band, int gain);
+
+    /** 
+     * @brief Set the EQ gain of the TAS5805M for selected channel
+     * 
+     * @param band: The band to set the gain of
+     * @param gain: The gain to set
+     * @param channel: The channel to set the gain for
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_set_eq_gain_channel(TAS5805M_EQ_CHANNELS channel,int band, int gain);
 
     /**
      * @brief Get the current EQ profile of the TAS5805M
@@ -370,6 +402,18 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
     esp_err_t tas5805m_get_eq_profile(TAS5805M_EQ_PROFILE *profile);
 
     /**
+     * @brief Get the EQ profile of the TAS5805M for a specific channel
+     * 
+     * @param profile: Pointer to the profile variable
+     * @param channel: The channel to get the profile for
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_get_eq_profile_channel(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE *profile);
+
+    /**
      * @brief Set the EQ profile of the TAS5805M
      * 
      * @param profile: The EQ profile to set
@@ -379,6 +423,18 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
      *     - ESP_FAIL
      */
     esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile);
+
+    /**
+     * @brief Set the EQ profile of the TAS5805M for a specific channel
+     * 
+     * @param profile: The EQ profile to set
+     * @param channel: The channel to set the profile for
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_set_eq_profile_channel(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE profile);
 
     /**
      * @brief Get the current modulation mode of the TAS5805M

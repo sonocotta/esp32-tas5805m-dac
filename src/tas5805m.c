@@ -68,9 +68,10 @@ static const char *TAG = "TAS5805";
 TAS5805_STATE tas5805m_state = {
     .is_muted = false,
     .state = TAS5805M_CTRL_PLAY,
-    .eq_gain = { 0 },                   // todo: can be redefined in startup sequence
-    .mixer_mode = MIXER_UNKNOWN,        // todo: can be redefined in startup sequence
-    .eq_profile = FLAT,                 // todo: can be redefined in startup sequence
+    .eq_gain_l = { 0 },                   // todo: can be redefined in startup sequence
+    .eq_gain_r = { 0 },                   // todo: can be redefined in startup sequence
+    .mixer_mode = MIXER_UNKNOWN,          // todo: can be redefined in startup sequence
+    .eq_profile = { FLAT, FLAT },         // todo: can be redefined in startup sequence
 };
 
 /* Helper Functions */
@@ -429,11 +430,28 @@ esp_err_t tas5805m_set_eq(bool enable)
 
 esp_err_t tas5805m_get_eq_gain(int band, int *gain)
 {
-  *gain = tas5805m_state.eq_gain[band];
+  return tas5805m_get_eq_gain_channel(TAS5805M_EQ_CHANNELS_LEFT, band, gain);
+}
+
+esp_err_t tas5805m_get_eq_gain_channel(TAS5805M_EQ_CHANNELS channel, int band, int *gain)
+{
+  switch (channel)
+  {
+    case TAS5805M_EQ_CHANNELS_RIGHT:
+      *gain = tas5805m_state.eq_gain_r[band];
+      break;
+    default:
+      *gain = tas5805m_state.eq_gain_l[band];
+      break;
+  }
   return ESP_OK;
 }
 
-esp_err_t tas5805m_set_eq_gain(int band, int gain)
+esp_err_t tas5805m_set_eq_gain(int band, int gain) {
+  return tas5805m_set_eq_gain_channel(TAS5805M_EQ_CHANNELS_LEFT, band, gain);
+}
+
+esp_err_t tas5805m_set_eq_gain_channel(TAS5805M_EQ_CHANNELS channel, int band, int gain)
 {
   if (band < 0 || band >= TAS5805M_EQ_BANDS)
   {
@@ -453,13 +471,15 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
 
   int x = gain + TAS5805M_EQ_MAX_DB;                                 
   int y = band * TAS5805M_EQ_KOEF_PER_BAND * TAS5805M_EQ_REG_PER_KOEF; 
-                                                                      
+    
+  const reg_sequence_eq **eq_maps = (channel == TAS5805M_EQ_CHANNELS_RIGHT) ? tas5805m_eq_registers_right : tas5805m_eq_registers_left;
+
   for (int i = 0; i < TAS5805M_EQ_KOEF_PER_BAND * TAS5805M_EQ_REG_PER_KOEF; i += TAS5805M_EQ_REG_PER_KOEF) 
   { 
-      const reg_sequence_eq *reg_value0 = &tas5805m_eq_registers_left[x][y + i + 0];
-      const reg_sequence_eq *reg_value1 = &tas5805m_eq_registers_left[x][y + i + 1];
-      const reg_sequence_eq *reg_value2 = &tas5805m_eq_registers_left[x][y + i + 2];
-      const reg_sequence_eq *reg_value3 = &tas5805m_eq_registers_left[x][y + i + 3];
+      const reg_sequence_eq *reg_value0 = &eq_maps[x][y + i + 0];
+      const reg_sequence_eq *reg_value1 = &eq_maps[x][y + i + 1];
+      const reg_sequence_eq *reg_value2 = &eq_maps[x][y + i + 2];
+      const reg_sequence_eq *reg_value3 = &eq_maps[x][y + i + 3];
 
       if (reg_value0 == NULL || reg_value1 == NULL || reg_value2 == NULL || reg_value3 == NULL) {                                        
           ESP_LOGW(TAG, "%s: NULL pointer encountered at row[%d]", __func__, y + i); 
@@ -487,7 +507,10 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
       }          
   }   
   
-  tas5805m_state.eq_gain[band] = gain;
+  if (channel == TAS5805M_EQ_CHANNELS_RIGHT)
+    tas5805m_state.eq_gain_r[band] = gain;
+  else
+    tas5805m_state.eq_gain_l[band] = gain;
                                                                       
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;
@@ -495,24 +518,35 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
 
 esp_err_t tas5805m_get_eq_profile(TAS5805M_EQ_PROFILE *profile)
 {
-  *profile = tas5805m_state.eq_profile;
+  return tas5805m_get_eq_profile_channel(TAS5805M_EQ_CHANNELS_LEFT, profile);
+}
+
+esp_err_t tas5805m_get_eq_profile_channel(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE *profile)
+{
+  *profile = tas5805m_state.eq_profile[channel];
   return ESP_OK;
 }
 
-esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile)
+esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile) {
+  return tas5805m_set_eq_profile_channel(TAS5805M_EQ_CHANNELS_LEFT, profile);
+}
+
+esp_err_t tas5805m_set_eq_profile_channel(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE profile)
 {
   // Apply preset EQ gains for the selected profile
   int current_page = 0; 
   int ret = ESP_OK;
   ESP_LOGD(TAG, "%s: Setting EQ profile to %d", __func__, profile);
   
+  const reg_sequence_eq **eq_maps = (channel == TAS5805M_EQ_CHANNELS_RIGHT) ? tas5805m_eq_profile_right_registers : tas5805m_eq_profile_left_registers;
+
   int x = (uint8_t)profile;
   for (int i = 0; i < TAS5805M_EQ_PROFILE_REG_PER_STEP; i += TAS5805M_EQ_REG_PER_KOEF) 
   { 
-    const reg_sequence_eq *reg_value0 = &tas5805m_eq_profile_left_registers[x][i + 0]; 
-    const reg_sequence_eq *reg_value1 = &tas5805m_eq_profile_left_registers[x][i + 1];
-    const reg_sequence_eq *reg_value2 = &tas5805m_eq_profile_left_registers[x][i + 2];
-    const reg_sequence_eq *reg_value3 = &tas5805m_eq_profile_left_registers[x][i + 3];
+    const reg_sequence_eq *reg_value0 = &eq_maps[x][i + 0]; 
+    const reg_sequence_eq *reg_value1 = &eq_maps[x][i + 1];
+    const reg_sequence_eq *reg_value2 = &eq_maps[x][i + 2];
+    const reg_sequence_eq *reg_value3 = &eq_maps[x][i + 3];
 
     if (reg_value0 == NULL || reg_value1 == NULL || reg_value2 == NULL || reg_value3 == NULL) {                                        
         ESP_LOGW(TAG, "%s: NULL pointer encountered at row[%d]", __func__, i); 
@@ -542,7 +576,7 @@ esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile)
   }
 
   // Set the EQ profile
-  tas5805m_state.eq_profile = profile;
+  tas5805m_state.eq_profile[channel] = profile;
 
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;

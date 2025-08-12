@@ -91,12 +91,28 @@
             return tas5805m_set_eq_gain(band, gain);
         };
 
+        esp_err_t getEqGain(TAS5805M_EQ_CHANNELS channel, int band, int *gain) {
+            return tas5805m_get_eq_gain_channel(channel, band, gain);
+        };
+
+        esp_err_t setEqGain(TAS5805M_EQ_CHANNELS channel, int band, int gain) {
+            return tas5805m_set_eq_gain_channel(channel, band, gain);
+        };
+
         esp_err_t getEqProfile(TAS5805M_EQ_PROFILE *profile) {
             return tas5805m_get_eq_profile(profile);
         };
 
         esp_err_t setEqProfile(TAS5805M_EQ_PROFILE profile) {
             return tas5805m_set_eq_profile(profile);
+        };
+
+        esp_err_t getEqProfile(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE *profile) {
+            return tas5805m_get_eq_profile_channel(channel, profile);
+        };
+
+        esp_err_t setEqProfile(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE profile) {
+            return tas5805m_set_eq_profile_channel(channel, profile);
         };
 
         esp_err_t getModulationMode(TAS5805M_MOD_MODE *mode, TAS5805M_SW_FREQ *freq, TAS5805M_BD_FREQ *bd_freq) {
