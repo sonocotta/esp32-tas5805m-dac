@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class ModulationCommand : public Command
 {
-    static inline const char *TAG = "CMD.MOD";
+    static constexpr const char *TAG = "CMD.MOD";
 
 private:
     // enum for modulation modes

@@ -47,41 +47,25 @@ private:
             return 1;
         }
 
-        const char *action = eq_args.action->sval[0]; // Get action argument
-
-        if (strcmp(action, "get") == 0)
+        if (eq_args.profile->count == 0)
         {
             TAS5805M_EQ_PROFILE eq_profile;
             Tas5805m.getEqProfile(&eq_profile);
             ESP_LOGI(TAG, "EQ profile num is %d, which is %s", eq_profile,
-                     tas5805m_eq_profile_names[eq_profile]);
+                    tas5805m_eq_profile_names[eq_profile]);
             return 0;
         }
-        else if (strcmp(action, "set") == 0)
-        {
-            // Ensure preset num is provided for "set"
-            if (eq_args.profile->count == 0 || eq_args.profile->count == 0)
-            {
-                ESP_LOGE("CMD", "Error: 'set' requires profile argument.");
-                return 1;
-            }
 
-            int profile = eq_args.profile->ival[0];
-            if (profile < 0 || profile >= TAS5805M_EQ_PROFILES)
-            {
-                ESP_LOGE(TAG, "%s: Invalid profile %d", __func__, profile);
-                return ESP_FAIL;
-            }
-
-            ESP_LOGI("CMD", "Setting EQ profile #%d, which is %s", profile,
-                     tas5805m_eq_profile_names[profile]);
-            Tas5805m.setEqProfile(static_cast<TAS5805M_EQ_PROFILE>(profile));
-        }
-        else
+        int profile = eq_args.profile->ival[0];
+        if (profile < 0 || profile >= TAS5805M_EQ_PROFILES)
         {
-            ESP_LOGE("CMD", "Invalid action: %s", action);
-            return 1;
+            ESP_LOGE(TAG, "%s: Invalid profile %d", __func__, profile);
+            return ESP_FAIL;
         }
+
+        ESP_LOGI("CMD", "Setting EQ profile #%d, which is %s", profile,
+                    tas5805m_eq_profile_names[profile]);
+        Tas5805m.setEqProfile(static_cast<TAS5805M_EQ_PROFILE>(profile));
 
         return 0;
     }
@@ -90,15 +74,13 @@ public:
 
     struct EqProfileArgs
     {
-        struct arg_str *action;
         struct arg_int *profile;
         struct arg_end *end;
     } args;
 
     static inline EqProfileArgs eq_args = {
-        arg_str1(NULL, NULL, "<set|get>", "Action: switch on/off or retrieve/update"),
         arg_int0(NULL, NULL, "[profile]", "Profile number (0..19), 0 is flat, 1 is LF 60Hz, 2 is LF 70Hz, .. 10 is LF 150Hz, 11 is HF 60Hz, .. 20 is HF 150Hz"),
-        arg_end(2)};
+        arg_end(1)};
 
     String getName()
     {

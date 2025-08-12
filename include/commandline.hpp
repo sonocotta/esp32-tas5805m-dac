@@ -12,6 +12,7 @@
 #include "commands/volume100.hpp"
 #include "commands/dacmode.hpp"
 #include "commands/eq.hpp"
+#include "commands/eqmode.hpp"
 #include "commands/eqprofile.hpp"
 #include "commands/modmode.hpp"
 #include "commands/gain.hpp"
@@ -25,7 +26,7 @@ private:
 
 
 #ifdef CONFIG_DAC_TAS5805M
-    const static int commands_size = 10;
+    const static int commands_size = 11;
 #else
     const static int commands_size = 0;
 #endif
@@ -37,6 +38,7 @@ private:
         new Volume100Command(),
         new DacModeCommand(),
         new EqCommand(),
+        new EqModeCommand(),
         new EqProfileCommand(),
         new ModulationCommand(),
         new GainCommand(),
@@ -45,7 +47,7 @@ private:
         #endif
     };
 
-    static inline const char *TAG = "CLI";
+    static constexpr const char *TAG = "CLI";
 
     // Read and process commands from Serial
     static void process_serial_commands()

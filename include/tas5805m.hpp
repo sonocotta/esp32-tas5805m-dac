@@ -14,7 +14,7 @@
 #include "nvs_flash.h"
 #include "esp_system.h"
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
 #include "tas5805m.h"
@@ -73,6 +73,14 @@
 
         esp_err_t setEqEnabled(bool enabled) {
             return tas5805m_set_eq(enabled);
+        };
+
+        esp_err_t getEqMode(TAS5805M_EQ_MODE *mode) {
+            return tas5805m_get_eq_mode(mode);
+        };
+
+        esp_err_t setEqMode(TAS5805M_EQ_MODE mode) {
+            return tas5805m_set_eq_mode(mode);
         };
 
         esp_err_t getEqGain(int band, int *gain) {

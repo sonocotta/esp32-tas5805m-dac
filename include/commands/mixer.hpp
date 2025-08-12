@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class MixerCommand: public Command
 {
-    static inline const char *TAG = "CMD.MIXER";
+    static constexpr const char *TAG = "CMD.MIXER";
 
 private:
 

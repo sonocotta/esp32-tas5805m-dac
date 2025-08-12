@@ -12,6 +12,8 @@ extern "C"
 {
 #endif
 
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
 
@@ -62,6 +64,12 @@ typedef enum {
     MIXER_LEFT,
 } TAS5805M_MIXER_MODE;
 
+typedef enum {
+    TAS5805M_EQ_MODE_OFF = 0b0111,
+    TAS5805M_EQ_MODE_ON = 0b0110,
+    TAS5805M_EQ_MODE_BIAMP = 0b1110,
+    TAS5805M_EQ_MODE_BIAMP_OFF = 0b1111,
+} TAS5805M_EQ_MODE;
 
 typedef enum {
     FS_FREQ_ERROR = 0b0000,
@@ -312,6 +320,25 @@ static const uint8_t tas5805m_again[TAS5805M_MIN_GAIN + 1] = {
      * 
     */
     esp_err_t tas5805m_set_eq(bool enable);
+
+    /** 
+     * @brief Get the current EQ mode of the TAS5805M
+     * 
+     * @param mode: Pointer to the mode variable
+     * 
+    */
+    esp_err_t tas5805m_get_eq_mode(TAS5805M_EQ_MODE *mode);
+
+    /** 
+     * @brief Set the EQ mode of the TAS5805M
+     * 
+     * @param mode: The mode to set
+     * 
+     * @return
+     *     - ESP_OK
+     *     - ESP_FAIL
+     */
+    esp_err_t tas5805m_set_eq_mode(TAS5805M_EQ_MODE mode);
 
     /** 
      * @brief Get the current EQ gain of the TAS5805M

@@ -400,6 +400,27 @@ esp_err_t tas5805m_get_eq(bool *enabled)
   return ESP_OK;
 }
 
+esp_err_t tas5805m_get_eq_mode(TAS5805M_EQ_MODE *mode)
+{
+  uint8_t value = 0;
+  esp_err_t err = tas5805m_read_byte(TAS5805M_DSP_MISC, &value);
+  if (err != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(err));
+    return err;
+  }
+
+  // Extract the EQ mode from the value
+  *mode = (TAS5805M_EQ_MODE)(value & 0b00001111);
+  return ESP_OK;
+}
+
+esp_err_t tas5805m_set_eq_mode(TAS5805M_EQ_MODE mode)
+{
+  ESP_LOGD(TAG, "%s: Setting EQ MODE to %d", __func__, mode);
+  return tas5805m_write_byte(TAS5805M_DSP_MISC, (uint8_t)mode);
+}
+
 esp_err_t tas5805m_set_eq(bool enable)
 {
   ESP_LOGD(TAG, "%s: Setting EQ to %d", __func__, enable);
@@ -433,23 +454,36 @@ esp_err_t tas5805m_set_eq_gain(int band, int gain)
   int x = gain + TAS5805M_EQ_MAX_DB;                                 
   int y = band * TAS5805M_EQ_KOEF_PER_BAND * TAS5805M_EQ_REG_PER_KOEF; 
                                                                       
-  for (int i = 0; i < TAS5805M_EQ_KOEF_PER_BAND * TAS5805M_EQ_REG_PER_KOEF; i++) 
+  for (int i = 0; i < TAS5805M_EQ_KOEF_PER_BAND * TAS5805M_EQ_REG_PER_KOEF; i += TAS5805M_EQ_REG_PER_KOEF) 
   { 
-      const reg_sequence_eq *reg_value = &tas5805m_eq_registers[x][y + i]; 
-      if (reg_value == NULL) {                                        
+      const reg_sequence_eq *reg_value0 = &tas5805m_eq_registers_left[x][y + i + 0];
+      const reg_sequence_eq *reg_value1 = &tas5805m_eq_registers_left[x][y + i + 1];
+      const reg_sequence_eq *reg_value2 = &tas5805m_eq_registers_left[x][y + i + 2];
+      const reg_sequence_eq *reg_value3 = &tas5805m_eq_registers_left[x][y + i + 3];
+
+      if (reg_value0 == NULL || reg_value1 == NULL || reg_value2 == NULL || reg_value3 == NULL) {                                        
           ESP_LOGW(TAG, "%s: NULL pointer encountered at row[%d]", __func__, y + i); 
           continue;                                                   
       }                                                               
-                                                                      
-      if (reg_value->page != current_page) {                          
-          current_page = reg_value->page;                             
-          TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_EQ, reg_value->page); 
+      
+      // Assume all 4 reg values are in the same page, seems to be true for all BQ registers
+      if (reg_value0->page != current_page) {                          
+        TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_EQ, reg_value0->page); 
+        current_page = reg_value0->page;                             
       }                                                               
-                                                                      
-      ESP_LOGV(TAG, "+ %d: w 0x%x 0x%x", i, reg_value->offset, reg_value->value);
-      ret = ret | tas5805m_write_byte(reg_value->offset, reg_value->value);
+                
+      uint8_t address = reg_value0->offset;
+      uint32_t value = reg_value0->value | 
+                     (reg_value1->value << 8) | 
+                     (reg_value2->value << 16) | 
+                     (reg_value3->value << 24);
+
+      ESP_LOGV(TAG, "%s: + %d: w 0x%x 0x%x 0x%x 0x%x 0x%x -> 0x%x", __func__, i, 
+             reg_value0->offset, reg_value0->value, 
+             reg_value1->value, reg_value2->value, reg_value3->value, value);
+      ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&value, sizeof(value));
       if (ret != ESP_OK) { 
-          ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, reg_value->offset); 
+          ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, address); 
       }          
   }   
   
@@ -473,23 +507,37 @@ esp_err_t tas5805m_set_eq_profile(TAS5805M_EQ_PROFILE profile)
   ESP_LOGD(TAG, "%s: Setting EQ profile to %d", __func__, profile);
   
   int x = (uint8_t)profile;
-  for (int i = 0; i < TAS5805M_EQ_PROFILE_REG_PER_STEP; i++) 
+  for (int i = 0; i < TAS5805M_EQ_PROFILE_REG_PER_STEP; i += TAS5805M_EQ_REG_PER_KOEF) 
   { 
-    const reg_sequence_eq *reg_value = &tas5805m_eq_profile_registers[x][i]; 
-    if (reg_value == NULL) {                                        
+    const reg_sequence_eq *reg_value0 = &tas5805m_eq_profile_left_registers[x][i + 0]; 
+    const reg_sequence_eq *reg_value1 = &tas5805m_eq_profile_left_registers[x][i + 1];
+    const reg_sequence_eq *reg_value2 = &tas5805m_eq_profile_left_registers[x][i + 2];
+    const reg_sequence_eq *reg_value3 = &tas5805m_eq_profile_left_registers[x][i + 3];
+
+    if (reg_value0 == NULL || reg_value1 == NULL || reg_value2 == NULL || reg_value3 == NULL) {                                        
         ESP_LOGW(TAG, "%s: NULL pointer encountered at row[%d]", __func__, i); 
         continue;                                                   
     }                
       
-    if (reg_value->page != current_page) {                          
-        current_page = reg_value->page;                             
-        TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_EQ, reg_value->page); 
+    // Assume all 4 reg values are in the same page, seems to be true for all BQ registers
+    if (reg_value0->page != current_page) {                          
+        current_page = reg_value0->page;                             
+        TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_EQ, reg_value0->page); 
     }                                                               
-                                                                    
-    ESP_LOGV(TAG, "+ %d: w 0x%x 0x%x", i, reg_value->offset, reg_value->value);
-    ret = ret | tas5805m_write_byte(reg_value->offset, reg_value->value);
+
+    uint8_t address = reg_value0->offset;
+    uint32_t value = reg_value0->value | 
+                     (reg_value1->value << 8) | 
+                     (reg_value2->value << 16) | 
+                     (reg_value3->value << 24);
+   
+    // ESP_LOGV(TAG, "%s: + %d: w 0x%x 0x%x 0x%x 0x%x 0x%x -> 0x%x", __func__, i, 
+    //        reg_value0->offset, reg_value0->value, 
+    //        reg_value1->value, reg_value2->value, reg_value3->value, value);
+    ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&value, sizeof(value));
+    // ret = ret | tas5805m_write_byte(reg_value->offset, reg_value->value);
     if (ret != ESP_OK) { 
-        ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, reg_value->offset); 
+        ESP_LOGE(TAG, "%s: Error writing to register 0x%x", __func__, address); 
     }     
   }
 
@@ -674,7 +722,6 @@ esp_err_t tas5805m_set_mixer_mode(TAS5805M_MIXER_MODE mode)
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;
 }
-
 
 esp_err_t tas5805m_get_fs_freq(TAS5805M_FS_FREQ *freq)
 {
