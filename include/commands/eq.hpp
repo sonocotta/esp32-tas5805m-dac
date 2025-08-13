@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class EqCommand : public Command
 {
-    static inline const char *TAG = "CMD.EQ";
+    static constexpr const char *TAG = "CMD.EQ";
 
 private:
     // Handler function for the "eq" command
@@ -54,7 +54,7 @@ private:
             // Ensure band and gain are provided for "set"
             if (eq_args.band->count == 0 || eq_args.gain->count == 0)
             {
-                ESP_LOGE("CMD", "Error: 'set' requires band and gain arguments.");
+                ESP_LOGE(TAG, "Error: 'set' requires band and gain arguments.");
                 return 1;
             }
 
@@ -72,7 +72,7 @@ private:
                 return ESP_ERR_INVALID_ARG;
             }
 
-            ESP_LOGI("CMD", "Setting EQ band %d to gain %d", band, gain);
+            ESP_LOGI(TAG, "Setting EQ band %d to gain %d", band, gain);
             Tas5805m.setEqGain(band, gain);
         }
 
@@ -88,16 +88,7 @@ public:
         struct arg_end *end;
     } args;
 
-    static inline EqArgs eq_args = {
-        arg_str1(NULL, NULL, "<l|r>", "Channel: left or right. If not in BIAMP mode, left applies to both channels"),
-        arg_int0(NULL, NULL, "[band]", "Band number (0..14)"),
-        arg_int0(NULL, NULL, "[gain]", "Gain level (-15..15 Db, default: 0)"),
-        arg_end(3)};
-
-    String getName()
-    {
-        return "eq";
-    };
+    static EqArgs eq_args;
 
     esp_console_cmd_t getCommand()
     {

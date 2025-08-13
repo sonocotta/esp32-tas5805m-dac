@@ -11,7 +11,7 @@ extern tas5805m Tas5805m;
 class DacModeCommand : public Command
 {
 private:
-    static inline const char *TAG = "CMD.DACMODE";
+    static constexpr const char *TAG = "CMD.DACMODE";
 
     // Enum for DAC modes
     typedef enum
@@ -85,14 +85,7 @@ public:
         struct arg_end *end;
     };
 
-    static inline DacModeArgs dacmode_args = {
-        arg_str0(NULL, NULL, "[mode]", "DAC mode: btl, pbtl"),
-        arg_end(1)};
-
-    String getName()
-    {
-        return "dacmode";
-    }
+    static DacModeArgs dacmode_args;
 
     esp_console_cmd_t getCommand()
     {

@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class FaultCommand : public Command
 {
-    static inline const char *TAG = "CMD.FAULT";
+    static constexpr const char *TAG = "CMD.FAULT";
 
 private:
 
@@ -20,16 +20,13 @@ private:
         if (nerrors > 0)
         {
             arg_print_errors(stderr, fault_args.end, "fault");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Invalid command usage");
             return 1;
         }
 
         if (fault_args.action->count == 0)
         {
             checkFaults();
-            // TAS5805M_FAULT fault;
-            // Tas5805m.getFaultState(&fault);
-            // Tas5805m.decodeFaults(fault);
             return 0;
         }
 
@@ -78,7 +75,7 @@ private:
     }
 
 public:
-    static inline TaskHandle_t taskHandle = nullptr;
+    static TaskHandle_t taskHandle;
 
     struct FaultArgs
     {
@@ -86,14 +83,7 @@ public:
         struct arg_end *end;
     };
 
-    static inline FaultArgs fault_args = {
-        arg_str0(NULL, NULL, "[action]", "Monitor fault state: on, off"),
-        arg_end(1)};
-
-    String getName()
-    {
-        return "fault";
-    };
+    static FaultArgs fault_args;
 
     esp_console_cmd_t getCommand()
     {

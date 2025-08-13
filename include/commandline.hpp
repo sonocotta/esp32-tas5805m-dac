@@ -8,16 +8,17 @@
 #include "commands/command.hpp"
 #ifdef CONFIG_DAC_TAS5805M
 #include "commands/ampstate.hpp"
-#include "commands/volume.hpp"
-#include "commands/volume100.hpp"
 #include "commands/dacmode.hpp"
 #include "commands/eq.hpp"
 #include "commands/eqmode.hpp"
 #include "commands/eqprofile.hpp"
-#include "commands/modmode.hpp"
-#include "commands/gain.hpp"
-#include "commands/mixer.hpp" 
 #include "commands/fault.hpp"
+#include "commands/gain.hpp"
+#include "commands/mixer.hpp"
+#include "commands/mixermode.hpp" 
+#include "commands/modmode.hpp"
+#include "commands/volume.hpp"
+#include "commands/volume100.hpp"
 #endif
 
 class CommandLine
@@ -26,7 +27,7 @@ private:
 
 
 #ifdef CONFIG_DAC_TAS5805M
-    const static int commands_size = 11;
+    const static int commands_size = 12;
 #else
     const static int commands_size = 0;
 #endif
@@ -34,16 +35,17 @@ private:
     Command *commands[commands_size] = {
         #ifdef CONFIG_DAC_TAS5805M
         new AmpStateCommand(),
-        new VolumeCommand(),
-        new Volume100Command(),
         new DacModeCommand(),
         new EqCommand(),
         new EqModeCommand(),
         new EqProfileCommand(),
-        new ModulationCommand(),
+        new FaultCommand(),
         new GainCommand(),
         new MixerCommand(),
-        new FaultCommand(),
+        new MixerModeCommand(),
+        new ModulationCommand(),
+        new VolumeCommand(),
+        new Volume100Command(),
         #endif
     };
 
@@ -87,23 +89,24 @@ private:
         {
             Command *cmd = commands[i];
             esp_console_cmd_t cmd_struct = cmd->getCommand();
-            ESP_LOGI(TAG, "Registering command: %s", cmd->getName());
+            ESP_LOGI(TAG, "Registering command: %s", cmd->getCommand().command);
             ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_struct));
         }
     }
 
 public:
 
-    static inline TaskHandle_t taskHandle = nullptr;
+    // Declaration only; definition moved to commandline.cpp
+    static TaskHandle_t taskHandle;
 
     esp_err_t registerCommandHandler(Command *cmd)
     {
         esp_console_cmd_t cmd_struct = cmd->getCommand();
-        ESP_LOGI(TAG, "Registering command: %s", cmd->getName());
+        ESP_LOGI(TAG, "Registering command: %s", cmd->getCommand().command);
         return esp_console_cmd_register(&cmd_struct);
     }
 
-    esp_err_t addCommand(char* name, char* help, int (*func)(int argc, char **argv))
+    esp_err_t addCommand(const char* name, const char* help, int (*func)(int argc, char **argv))
     {
         esp_console_cmd_t cmd = {
             .command = name,

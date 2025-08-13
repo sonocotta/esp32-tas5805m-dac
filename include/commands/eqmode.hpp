@@ -46,7 +46,7 @@ private:
             return 1;
         }
         
-        ESP_LOGI("CMD", "Setting EQ mode #%d, which is %s", mode,
+        ESP_LOGI(TAG, "Setting EQ mode #%d, which is %s", mode,
                     tas5805m_eq_mode_names[mode]);
         
                     TAS5805M_EQ_MODE _mode;
@@ -75,20 +75,13 @@ private:
 
 public:
 
-    struct EqProfileArgs
+    struct EqModeArgs
     {
         struct arg_int *mode;
         struct arg_end *end;
     } args;
 
-    static inline EqProfileArgs eq_args = {
-        arg_int0(NULL, NULL, "[mode]", "Mode number (0..3), 0 - ON, 1 - OFF, 2 - BIAMP, 3 - BIAMP_OFF"),
-        arg_end(1)};
-
-    String getName()
-    {
-        return "eqm";
-    };
+    static EqModeArgs eq_args;
 
     esp_console_cmd_t getCommand()
     {

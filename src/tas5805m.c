@@ -45,7 +45,6 @@
   #pragma message("tas5805m_2.0+eq(+12db_30Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz) config is used")
   #include "../startup/custom/tas5805m_2.0+eq(+12db_30Hz)(-3Db_500Hz)(+3Db_8kHz)(+3Db_15kHz).h"
 #else
-  #pragma message("tas5805m_2.0+minimal config is used")
   #include "../startup/tas5805m_2.0+minimal.h"
 #endif
 
@@ -70,12 +69,13 @@ TAS5805_STATE tas5805m_state = {
     .state = TAS5805M_CTRL_PLAY,
     .eq_gain_l = { 0 },                   // todo: can be redefined in startup sequence
     .eq_gain_r = { 0 },                   // todo: can be redefined in startup sequence
-    .mixer_mode = MIXER_UNKNOWN,          // todo: can be redefined in startup sequence
+    .mixer_mode = MIXER_STEREO,           // todo: can be redefined in startup sequence
     .eq_profile = { FLAT, FLAT },         // todo: can be redefined in startup sequence
 };
 
 /* Helper Functions */
 // Reading of TAS5805M-Register
+// TODO: why write register to read data???
 esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
 {
 
@@ -106,6 +106,39 @@ esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
 
   return ret;
 }
+
+// TODO: create read_bytes function
+// Not validated!!!!!
+// esp_err_t tas5805m_read_bytes(uint8_t *reg,
+//                                int regLen, uint8_t *data, int datalen)
+// {
+//   int ret = ESP_OK;
+//   ESP_LOGV(TAG, "%s: 0x%02x <- [%d] bytes", __func__, *reg, datalen);
+//   for (int i = 0; i < datalen; i++)
+//   {
+//     ESP_LOGV(TAG, "%s: 0x%02x", __func__, data[i]);
+//   }
+
+//   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+//   ret |= i2c_master_start(cmd);
+//   ret |= i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
+//   ret |= i2c_master_write(cmd, reg, regLen, ACK_CHECK_EN);
+//   ret |= i2c_master_start(cmd); // Restart for reading
+//   ret |= i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | READ_BIT, ACK_CHECK_EN);
+//   ret |= i2c_master_read(cmd, data, datalen, NACK_VAL);
+//   ret |= i2c_master_stop(cmd);
+//   ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+
+//   // Check if ret is OK
+//   if (ret != ESP_OK)
+//   {
+//     ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+//   }
+
+//   i2c_cmd_link_delete(cmd);
+
+//   return ret;
+// }
 
 // Writing of TAS5805M-Register
 esp_err_t tas5805m_write_byte(uint8_t register_name, uint8_t value)
@@ -727,32 +760,87 @@ esp_err_t tas5805m_set_mixer_mode(TAS5805M_MIXER_MODE mode)
     return ESP_ERR_INVALID_ARG;
   }
     
-  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_MIXER_PAGE);
-  ret = tas5805m_write_byte(TAS5805M_REG_LEFT_TO_LEFT_GAIN, mixer_l_to_l);
-  if (ret != 0) {
-    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_LEFT_TO_LEFT_GAIN, ret);
-    return ret;
-  }
-
-  ret = tas5805m_write_byte(TAS5805M_REG_RIGHT_TO_RIGHT_GAIN, mixer_r_to_r);
-  if (ret != 0) {
-    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_RIGHT_TO_RIGHT_GAIN, ret);
-    return ret;
-  }
-
-  ret = tas5805m_write_byte(TAS5805M_REG_LEFT_TO_RIGHT_GAIN, mixer_l_to_r);
-  if (ret != 0) {
-    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_LEFT_TO_RIGHT_GAIN, ret);
-    return ret;
-  }
-
-  ret = tas5805m_write_byte(TAS5805M_REG_RIGHT_TO_LEFT_GAIN, mixer_r_to_l);
-  if (ret != 0) {
-    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_RIGHT_TO_LEFT_GAIN, ret);
-    return ret;
-  }
+  ret = ret | tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, mixer_l_to_l);
+  ret = ret | tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_RIGHT_TO_RIGHT, mixer_r_to_r);
+  ret = ret | tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_RIGHT, mixer_l_to_r);
+  ret = ret | tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_RIGHT_TO_LEFT, mixer_r_to_l);
 
   tas5805m_state.mixer_mode = mode;
+  return ret;
+}
+
+esp_err_t tas5805m_get_mixer_gain(TAS5805M_MIXER_CHANNELS channel, uint32_t *gain)
+{
+  ESP_LOGD(TAG, "%s: Getting mixer gain for channel %d", __func__, channel);
+  uint8_t reg;
+
+  switch (channel)
+  {
+  case TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT:
+    reg = TAS5805M_REG_LEFT_TO_LEFT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_RIGHT_TO_RIGHT:
+    reg = TAS5805M_REG_RIGHT_TO_RIGHT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_LEFT_TO_RIGHT:
+    reg = TAS5805M_REG_LEFT_TO_RIGHT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_RIGHT_TO_LEFT:
+    reg = TAS5805M_REG_RIGHT_TO_LEFT_GAIN;
+    break;
+  default:
+    ESP_LOGE(TAG, "%s: Invalid mixer channel %d", __func__, channel);
+    return ESP_ERR_INVALID_ARG;
+  }
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_MIXER_PAGE);
+  // int ret = tas5805m_read_bytes(&reg, 1, (uint8_t *)gain, sizeof(uint32_t));
+  // if (ret != ESP_OK) {
+  //   ESP_LOGE(TAG, "Failed to read register %d: %d", reg, ret);
+  // }
+  int ret = ESP_OK;
+  ret = ret | tas5805m_read_byte(reg, (uint8_t *)gain);
+  ret = ret | tas5805m_read_byte(reg + 1, ((uint8_t *)gain) + 1);
+  ret = ret | tas5805m_read_byte(reg + 2, ((uint8_t *)gain) + 2);
+  ret = ret | tas5805m_read_byte(reg + 3, ((uint8_t *)gain) + 3);
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to read register %d: %d", reg, ret);
+  } 
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
+  return ret;
+}
+
+esp_err_t tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNELS channel, uint32_t gain)
+{
+  ESP_LOGD(TAG, "%s: Setting mixer gain for channel %d to 0x%08x", __func__, channel, gain);
+  uint8_t reg;
+
+  switch (channel)
+  {
+  case TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT:
+    reg = TAS5805M_REG_LEFT_TO_LEFT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_RIGHT_TO_RIGHT:
+    reg = TAS5805M_REG_RIGHT_TO_RIGHT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_LEFT_TO_RIGHT:
+    reg = TAS5805M_REG_LEFT_TO_RIGHT_GAIN;
+    break;
+  case TAS5805M_MIXER_CHANNEL_RIGHT_TO_LEFT:
+    reg = TAS5805M_REG_RIGHT_TO_LEFT_GAIN;
+    break;
+  default:
+    ESP_LOGE(TAG, "%s: Invalid mixer channel %d", __func__, channel);
+    return ESP_ERR_INVALID_ARG;
+  } 
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_MIXER_PAGE);
+  int ret = tas5805m_write_bytes(&reg, 1, (uint8_t *)&gain, sizeof(gain));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_LEFT_TO_LEFT_GAIN, ret);
+  }
+
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;
 }

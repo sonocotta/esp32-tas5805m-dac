@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class EqProfileCommand : public Command
 {
-    static inline const char *TAG = "CMD.EQ.PROFILE";
+    static constexpr const char *TAG = "CMD.EQ.PROFILE";
 
 private:
     // Handler function for the "eqprofile" command
@@ -86,7 +86,7 @@ private:
             return ESP_FAIL;
         }
 
-        ESP_LOGI("CMD", "Setting EQ profile (%d) #%d, which is %s", channel, profile,
+        ESP_LOGI(TAG, "Setting EQ profile (%d) #%d, which is %s", channel, profile,
                     tas5805m_eq_profile_names[profile]);
         Tas5805m.setEqProfile(channel, static_cast<TAS5805M_EQ_PROFILE>(profile));
 
@@ -102,15 +102,8 @@ public:
         struct arg_end *end;
     } args;
 
-    static inline EqProfileArgs eq_args = {
-        arg_str0(NULL, NULL, "<l|r>", "Channel: left or right. If not in BIAMP mode, left applies to both channels"),
-        arg_int0(NULL, NULL, "[profile]", "Profile number (0..19), 0 is flat, 1 is LF 60Hz, 2 is LF 70Hz, .. 10 is LF 150Hz, 11 is HF 60Hz, .. 20 is HF 150Hz"),
-        arg_end(2)};
-
-    String getName()
-    {
-        return "eqp";
-    };
+    // Declaration only; definition moved to eqprofile.cpp
+    static EqProfileArgs eq_args;
 
     esp_console_cmd_t getCommand()
     {

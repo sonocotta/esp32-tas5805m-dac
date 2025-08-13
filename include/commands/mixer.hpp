@@ -1,62 +1,19 @@
 #pragma once
 
 #include <string.h>
-#include <tas5805m.hpp>
+#include "tas5805m.hpp"
+#include "tas5805m-math.h"
 
 #include "command.hpp"
 #include "argtable3/argtable3.h"
 
 extern tas5805m Tas5805m;
 
-class MixerCommand: public Command
+class MixerCommand : public Command
 {
     static constexpr const char *TAG = "CMD.MIXER";
 
 private:
-
-    static enum MixerMode
-    {
-        STEREO,
-        INV,
-        MONO,
-        LEFT,
-        RIGHT,
-        UNKNOWN
-    } mixer_mode_t;
-
-    static MixerMode get_mixer_mode(const char *arg)
-    {
-        if (strcmp(arg, "stereo") == 0)
-            return STEREO;
-        if (strcmp(arg, "inv") == 0)
-            return INV;
-        if (strcmp(arg, "mono") == 0)
-            return MONO;
-        if (strcmp(arg, "left") == 0)
-            return LEFT;
-        if (strcmp(arg, "right") == 0)
-            return RIGHT;
-        return UNKNOWN;
-    }
-
-    static const char *map_mixer_mode(TAS5805M_MIXER_MODE mode)
-    {
-        switch (mode)
-        {
-        case MIXER_STEREO:
-            return "STEREO";
-        case MIXER_STEREO_INVERSE:
-            return "STEREO_INVERSE";
-        case MIXER_MONO:
-            return "MONO";
-        case MIXER_LEFT:
-            return "LEFT";
-        case MIXER_RIGHT:
-            return "RIGHT";
-        default:
-            return "UNKNOWN";
-        }
-    }
 
     static int mixer_command_handler(int argc, char **argv)
     {
@@ -64,77 +21,79 @@ private:
         if (nerrors > 0)
         {
             arg_print_errors(stderr, mixer_args.end, "mixer");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Invalid command usage");
             return 1;
         }
 
-        if (mixer_args.action->count == 0)
+        if (mixer_args.channel->count == 0)
         {
-            TAS5805M_MIXER_MODE mode;
-            Tas5805m.getMixerMode(&mode);
-            ESP_LOGI(TAG, "Current mixer mode is %s", map_mixer_mode(mode));
+            uint32_t gain_9_23;
+            for (uint8_t channel = 0; channel < 4; channel++)
+            {
+                TAS5805M_MIXER_CHANNELS mixer_channel = static_cast<TAS5805M_MIXER_CHANNELS>(channel);
+                Tas5805m.getMixerGainRaw(mixer_channel, &gain_9_23);
+                ESP_LOGI(TAG, "Mixer gain for channel %d is 0x%08x, which is decimal %.2f", 
+                    channel, gain_9_23, tas5805m_q9_23_to_float(gain_9_23));
+            }
             return 0;
         }
 
-        MixerMode mode = get_mixer_mode(mixer_args.action->sval[0]);
-
-        switch (mode)
+        TAS5805M_MIXER_CHANNELS channel;
+        if (strcmp(mixer_args.channel->sval[0], "ll") == 0)
+            channel = TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT;
+        else if (strcmp(mixer_args.channel->sval[0], "lr") == 0)
+            channel = TAS5805M_MIXER_CHANNEL_LEFT_TO_RIGHT;
+        else if (strcmp(mixer_args.channel->sval[0], "rl") == 0)
+            channel = TAS5805M_MIXER_CHANNEL_RIGHT_TO_LEFT;
+        else if (strcmp(mixer_args.channel->sval[0], "rr") == 0)
+            channel = TAS5805M_MIXER_CHANNEL_RIGHT_TO_RIGHT;
+        else
         {
-            case STEREO:
-                ESP_LOGI(TAG, "Mixer set to STEREO mode");
-                ESP_ERROR_CHECK(Tas5805m.setMixerMode(MIXER_STEREO));
-                break;
-            case INV:
-                ESP_LOGI(TAG, "Mixer set to STEREO_INVERSE mode");
-                ESP_ERROR_CHECK(Tas5805m.setMixerMode(MIXER_STEREO_INVERSE));
-                break;
-            case MONO:
-                ESP_LOGI(TAG, "Mixer set to MONO mode");
-                ESP_ERROR_CHECK(Tas5805m.setMixerMode(MIXER_MONO));
-                break;
-            case LEFT:
-                ESP_LOGI(TAG, "Mixer set to LEFT mode");
-                ESP_ERROR_CHECK(Tas5805m.setMixerMode(MIXER_LEFT));
-                break;
-            case RIGHT:
-                ESP_LOGI(TAG, "Mixer set to RIGHT mode");
-                ESP_ERROR_CHECK(Tas5805m.setMixerMode(MIXER_RIGHT));
-                break;
+            ESP_LOGE(TAG, "Invalid channel '%s'", mixer_args.channel->sval[0]);
+            return 1;
+        }
 
-            default:
-                ESP_LOGI(TAG, "Invalid mode! Use: stereo, inv, mono, left, right");
-                return 1;
+        if (mixer_args.gain->count == 0)
+        {
+            uint32_t gain_9_23;
+            Tas5805m.getMixerGainRaw(channel, &gain_9_23);
+            ESP_LOGI(TAG, "Mixer gain for channel %s is 0x%x, which is decimal %.2f", 
+                mixer_args.channel->sval[0], gain_9_23, tas5805m_q9_23_to_float(gain_9_23));
+            return 0;
+        }
+
+        float gain = mixer_args.gain->dval[0];
+
+        ESP_LOGI(TAG, "Setting mixer gain for channel %s to %.2f (0x%08x)", 
+            mixer_args.channel->sval[0], gain, tas5805m_float_to_q9_23(gain));
+        esp_err_t err = Tas5805m.setMixerGain(channel, gain);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to set mixer gain: %s", esp_err_to_name(err));
+            return 1;
         }
 
         return 0;
     }
 
 public:
-
     struct MixerArgs
     {
-        struct arg_str *action;
+        struct arg_str *channel;
+        struct arg_dbl *gain;
         struct arg_end *end;
     };
 
-    static inline MixerArgs mixer_args = {
-        arg_str0(NULL, NULL, "[stereo|inv|mono|left|right]", "Mixer mode, one of the listed"),
-        arg_end(1)
-    };
-
-    String getName()
-    {
-        return "mixer";
-    };
+    // Declaration only; definition moved to mixer.cpp
+    static MixerArgs mixer_args;
 
     esp_console_cmd_t getCommand()
     {
         return {
             .command = "mixer",
-            .help = "Control the mixer",
+            .help = "Control the mixer, set gain for a specified channel",
             .hint = NULL,
             .func = &mixer_command_handler,
-            .argtable = &mixer_args
-        };
+            .argtable = &mixer_args};
     }
 };

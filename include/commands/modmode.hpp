@@ -46,7 +46,7 @@ private:
         }
     }
 
-    static char *mod_mode_to_string(TAS5805M_MOD_MODE mode)
+    static const char *mod_mode_to_string(TAS5805M_MOD_MODE mode)
     {
         switch (mode)
         {
@@ -99,7 +99,7 @@ private:
         }
     }
 
-    static char *sw_freq_to_string(TAS5805M_SW_FREQ freq)
+    static const char *sw_freq_to_string(TAS5805M_SW_FREQ freq)
     {
         switch (freq)
         {
@@ -111,7 +111,6 @@ private:
             return "576k";
         case SW_FREQ_768K:
             return "768k";
-
         default:
             return "UNKNOWN";
         }
@@ -154,7 +153,7 @@ private:
         }
     }
 
-    static char *bd_freq_to_string(TAS5805M_BD_FREQ freq)
+    static const char *bd_freq_to_string(TAS5805M_BD_FREQ freq)
     {
         switch (freq)
         {
@@ -178,7 +177,7 @@ private:
         if (nerrors > 0)
         {
             arg_print_errors(stderr, mod_args.end, "mod");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Invalid command usage");
             return 1;
         }
 
@@ -217,7 +216,7 @@ private:
         TAS5805M_MOD_MODE mode = map_mod_mode(_mode);
         TAS5805M_SW_FREQ freq = map_sw_freq(_freq);
         TAS5805M_BD_FREQ bd_freq = map_bd_freq(_bd_freq);
-        ESP_LOGI("CMD", "Setting modulation mode to %s, dsp processing freq: %s, switching freq: %s", 
+        ESP_LOGI(TAG, "Setting modulation mode to %s, dsp processing freq: %s, switching freq: %s", 
             mod_mode_to_string(mode), sw_freq_to_string(freq), bd_freq_to_string(bd_freq));
         Tas5805m.setModulationMode(mode, freq, bd_freq);
         return 0;
@@ -232,16 +231,8 @@ public:
         struct arg_end *end;
     } args;
 
-    static inline ModulationArgs mod_args = {
-        arg_str0(NULL, NULL, "[mode]", "Modulation mode: bd, 1spw, hybrid"),
-        arg_str0(NULL, NULL, "[freq]", "Frequency: 768k, 384k, 480k, 576k"),
-        arg_str0(NULL, NULL, "[bd_freq]", "BD Frequency: 80k, 100k, 120k, 175k"),
-        arg_end(3)};
-
-    String getName()
-    {
-        return "mod";
-    };
+    // Declaration only; definition moved to modmode.cpp
+    static ModulationArgs mod_args;
 
     esp_console_cmd_t getCommand()
     {
