@@ -19,6 +19,50 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Get and clear fault states
   - Decode fault errors
 
+## TOC
+
+- [ESP32 TAS5805M DAC Library](#esp32-tas5805m-dac-library)
+  - [Features](#features)
+  - [TOC](#toc)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Important notes](#important-notes)
+    - [Initialization](#initialization)
+  - [Digital Volume and Analog Gain](#digital-volume-and-analog-gain)
+    - [Setting and Getting Volume](#setting-and-getting-volume)
+    - [Setting and Getting Analog Gain](#setting-and-getting-analog-gain)
+  - [Power states](#power-states)
+    - [Setting and Getting Power State](#setting-and-getting-power-state)
+    - [Setting and Getting Mute State](#setting-and-getting-mute-state)
+    - [Setting and Getting DAC Mode](#setting-and-getting-dac-mode)
+  - [EQ controls](#eq-controls)
+    - [Setting and Getting EQ State and Gain](#setting-and-getting-eq-state-and-gain)
+    - [Setting and Getting EQ for Individual Channels](#setting-and-getting-eq-for-individual-channels)
+  - [EQ High-pass and Low-pass filer presets (Subwoofer and satellite profiles)](#eq-high-pass-and-low-pass-filer-presets-subwoofer-and-satellite-profiles)
+    - [Setting and Getting EQ Profile](#setting-and-getting-eq-profile)
+    - [Setting and Getting EQ Profile for Individual Channels](#setting-and-getting-eq-profile-for-individual-channels)
+  - [Modulation modes and switching frequency](#modulation-modes-and-switching-frequency)
+      - [BD Modulation](#bd-modulation)
+      - [1SPW Modulation](#1spw-modulation)
+      - [Hybrid Modulation](#hybrid-modulation)
+      - [Driver Switching frequency](#driver-switching-frequency)
+    - [Setting and Getting Modulation Mode](#setting-and-getting-modulation-mode)
+  - [Mixer controls](#mixer-controls)
+    - [Setting and Getting Mixer Mode](#setting-and-getting-mixer-mode)
+  - [Manual mixer controls](#manual-mixer-controls)
+    - [Get mixer gain](#get-mixer-gain)
+    - [Set mixer gain](#set-mixer-gain)
+  - [DAC state functions](#dac-state-functions)
+    - [Getting Sample Rate and BCK Ratio](#getting-sample-rate-and-bck-ratio)
+    - [Getting Power State and Automute State](#getting-power-state-and-automute-state)
+    - [Getting and Clearing Fault States](#getting-and-clearing-fault-states)
+    - [Decoding Fault Errors](#decoding-fault-errors)
+    - [Mapping Functions](#mapping-functions)
+  - [To Do](#to-do)
+  - [License](#license)
+  - [Contributing](#contributing)
+  - [Acknowledgements](#acknowledgements)
+
 ## Installation
 
 1. Clone the repository:
@@ -602,10 +646,9 @@ if (ret != ESP_OK) {
 
 Mixer settings allow to mix channel signals and route them to the appropriate channel. The typical setup for the mixer is to send Left channel audio to the Left driver, and Right channel to the Right 
 
-
 ![image](https://github.com/user-attachments/assets/d1a24adf-a417-48a1-b35d-39ee9d199587)
 
-A common alternative is to combine both channels into true Mono (you need to reduce both to -3Db to compensate for signal doubling)
+A common alternative is to combine both channels into true Mono (you need to reduce both to -3Db to compensate for signal summation)
 
 ![image](https://github.com/user-attachments/assets/390d1ecb-e3cd-4fff-8951-80fc318ec7d9)
 
@@ -616,7 +659,8 @@ Of course, you can decide to use a single channel or a mix of two, just keep in 
 To set the mixer mode, use the `tas5805m_set_mixer_mode` function:
 
 ```cpp
-TAS5805M_MIXER_MODE mode = MIXER_STEREO;
+// one of MIXER_STEREO, MIXER_STEREO_INVERSE, MIXER_MONO, MIXER_LEFT, MIXER_RIGHT
+TAS5805M_MIXER_MODE mode = MIXER_STEREO; 
 esp_err_t ret = tas5805m_set_mixer_mode(mode);
 if (ret != ESP_OK) {
     ESP_LOGE("TAS5805M", "Failed to set mixer mode");
@@ -633,6 +677,32 @@ if (ret != ESP_OK) {
 } else {
     ESP_LOGI("TAS5805M", "Current mixer mode: %d", mode);
 }
+```
+
+## Manual mixer controls
+
+For more flexibility, you can get or set the mixer gain for a specific channel. The gain value is a 32-bit integer in Q9.23 fixed-point format. There are helper functions to translate float into Q9.23 and vice versa in the "tas5805m-math.h" file
+
+### Get mixer gain
+
+```cpp
+uint32_t gain_9_23;
+esp_err_t ret = tas5805m_get_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, &gain_9_23);
+if (ret == ESP_OK) {
+    ESP_LOGI(TAG, "Mixer gain for channel %d is 0x%08x, which is decimal %.2f", 
+                    TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, 
+                    gain_9_23, 
+                    tas5805m_q9_23_to_float(gain_9_23)
+            );
+}
+```
+
+### Set mixer gain
+
+```cpp
+float gain = 2; // +6Db
+uint32_t gain_9_23 = tas5805m_float_to_q9_23(gain); // Q9.23 format
+esp_err_t ret = tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, gain_9_23);
 ```
 
 ## DAC state functions
@@ -760,6 +830,25 @@ To decode fault errors, use the `tas5805m_decode_faults` function:
 ```cpp
 TAS5805M_FAULT fault = { .err0 = 1, .err1 = 0, .err2 = 0, .ot_warn = 1 };
 tas5805m_decode_faults(fault);
+```
+### Mapping Functions
+
+These functions convert internal enums to human-readable strings for logging or UI.
+
+**Map amplifier state to string:**
+```cpp
+TAS5805M_CTRL_STATE state;
+tas5805m_get_state(&state);
+const char* state_str = tas5805m_map_amp_state(state);
+// Example: "PLAY", "MUTE", etc.
+```
+
+**Map sample rate enum to string:**
+```cpp
+TAS5805M_FS_FREQ freq;
+tas5805m_get_fs_freq(&freq);
+const char* freq_str = tas5805m_map_fs_freq(freq);
+// Example: "48K", "96K", etc.
 ```
 
 ## To Do
