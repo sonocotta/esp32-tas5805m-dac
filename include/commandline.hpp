@@ -4,6 +4,7 @@
 #include "argtable3/argtable3.h"
 #include "linenoise/linenoise.h"
 #include "esp_vfs_dev.h"
+#include "esp_log.h"
 
 #include "commands/command.hpp"
 #ifdef CONFIG_DAC_TAS5805M
