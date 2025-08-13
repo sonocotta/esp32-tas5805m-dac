@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class EqCommand : public Command
 {
-    static inline const char *TAG = "CMD.EQ";
+    static constexpr const char *TAG = "CMD.EQ";
 
 private:
     // Handler function for the "eq" command
@@ -22,54 +22,39 @@ private:
             ESP_LOGE(TAG, "Error parsing arguments");
             return 1;
         }
-        
-        if (eq_args.action->count == 0)
+
+        if (eq_args.channel->count == 0)
         {
-            bool eq_enabled;
-            Tas5805m.getEqEnabled(&eq_enabled);
-            ESP_LOGI(TAG, "EQ enable state is %d", eq_enabled);
-            return 0;
+            ESP_LOGE(TAG, "Error: 'channel' argument is required.");
+            return 1;
         }
-        
-        const char *action = eq_args.action->sval[0]; // Get action argument
-        
-        if (strcmp(action, "on") == 0)
+
+        TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT;
+        if (strcmp(eq_args.channel->sval[0], "r") == 0)
         {
-            ESP_LOGI("CMD", "Enabling EQ");
-            Tas5805m.setEqEnabled(true);
+            channel = TAS5805M_EQ_CHANNELS_RIGHT;
         }
-        else if (strcmp(action, "off") == 0)
+        else if (strcmp(eq_args.channel->sval[0], "l") != 0)
         {
-            ESP_LOGI("CMD", "Disabling EQ");
-            Tas5805m.setEqEnabled(false);
+            ESP_LOGE(TAG, "Invalid channel '%s', must be 'l' or 'r'", eq_args.channel->sval[0]);
+            return 1;
         }
-        else if (strcmp(action, "get") == 0)
+
+        if (eq_args.band->count == 0 || eq_args.gain->count == 0)
         {
-            // Ensure band is provided for "get"
-            if (eq_args.band->count == 0)
+            for (int band = 0; band < TAS5805M_EQ_BANDS; band++)
             {
-                ESP_LOGE("CMD", "Error: 'get' requires band argument.");
-                return 1;
+                int gain;
+                Tas5805m.getEqGain(channel, band, &gain);
+                ESP_LOGI(TAG, "EQ band %d (%d Hz) has gain %d", band, tas5805m_eq_bands[band], gain);
             }
-
-            int band = eq_args.band->ival[0];
-            if (band < 0 || band >= TAS5805M_EQ_BANDS)
-            {
-                ESP_LOGE(TAG, "%s: Invalid band %d", __func__, band);
-                return ESP_FAIL;
-            }
-
-            int gain;
-            Tas5805m.getEqGain(band, &gain);
-
-            ESP_LOGI("CMD", "EQ band %d (%d Hz) has gain %d", band, tas5805m_eq_bands[band], gain);
         }
-        else if (strcmp(action, "set") == 0)
+        else
         {
             // Ensure band and gain are provided for "set"
             if (eq_args.band->count == 0 || eq_args.gain->count == 0)
             {
-                ESP_LOGE("CMD", "Error: 'set' requires band and gain arguments.");
+                ESP_LOGE(TAG, "Error: 'set' requires band and gain arguments.");
                 return 1;
             }
 
@@ -87,13 +72,8 @@ private:
                 return ESP_ERR_INVALID_ARG;
             }
 
-            ESP_LOGI("CMD", "Setting EQ band %d to gain %d", band, gain);
+            ESP_LOGI(TAG, "Setting EQ band %d to gain %d", band, gain);
             Tas5805m.setEqGain(band, gain);
-        }
-        else
-        {
-            ESP_LOGE("CMD", "Invalid action: %s", action);
-            return 1;
         }
 
         return 0;
@@ -102,22 +82,13 @@ private:
 public:
     struct EqArgs
     {
-        struct arg_str *action;
+        struct arg_str *channel;
         struct arg_int *band;
         struct arg_int *gain;
         struct arg_end *end;
     } args;
 
-    static inline EqArgs eq_args = {
-        arg_str0(NULL, NULL, "[<on|off|set|get>]", "Action: switch on/off or retrieve/update"),
-        arg_int0(NULL, NULL, "[band]", "Band number (0..14)"),
-        arg_int0(NULL, NULL, "[gain]", "Gain level (-15..15 Db, default: 0)"),
-        arg_end(3)};
-
-    String getName()
-    {
-        return "eq";
-    };
+    static EqArgs eq_args;
 
     esp_console_cmd_t getCommand()
     {

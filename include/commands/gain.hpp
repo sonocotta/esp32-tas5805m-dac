@@ -10,7 +10,7 @@ extern tas5805m Tas5805m;
 
 class GainCommand : public Command
 {
-    static inline const char *TAG = "CMD.GAIN";
+    static constexpr const char *TAG = "CMD.GAIN";
 
 private:
 
@@ -26,7 +26,7 @@ private:
         if (nerrors > 0)
         {
             arg_print_errors(stderr, gain_args.end, "gain");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Invalid command usage");
             return 1;
         }
 
@@ -57,14 +57,8 @@ public:
         struct arg_end *end;
     };
 
-    static inline GainArgs gain_args = {
-        arg_int0(NULL, NULL, "<gain>", "Gain level, 0..31, 0 = 0dB, 31 = -15.5dB"),
-        arg_end(1)};
-
-    String getName()
-    {
-        return "gain";
-    };
+    // Declaration only; definition moved to gain.cpp
+    static GainArgs gain_args;
 
     esp_console_cmd_t getCommand()
     {

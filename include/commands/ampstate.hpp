@@ -24,7 +24,7 @@ class AmpStateCommand : public Command
 {
 
 
-    static inline const char *TAG = "CMD.AMP";
+    static constexpr const char *TAG = "CMD.AMP";
     private:
 
     typedef enum {
@@ -45,7 +45,7 @@ class AmpStateCommand : public Command
         return AMP_INVALID;
     }
 
-    static char* map_amp_state(TAS5805M_CTRL_STATE state) 
+    static const char* map_amp_state(TAS5805M_CTRL_STATE state) 
     {
         switch (state)
         {
@@ -71,7 +71,7 @@ class AmpStateCommand : public Command
         if (nerrors > 0)
         {
             arg_print_errors(stderr, amp_args.end, "amp");
-            ESP_LOGE("CMD", "Invalid command usage");
+            ESP_LOGE(TAG, "Invalid command usage");
             return 1;
         }
 
@@ -124,15 +124,8 @@ public:
         struct arg_end *end;
     };
 
-    static inline AmpStateArgs amp_args = {
-        arg_str0(NULL, NULL, "<mode>", "Amp mode: play, mute, highz, sleep, deepsleep"),
-        arg_end(1)
-    };
-
-    String getName()
-    {
-        return "amp";
-    }
+    // Declaration only; definition moved to eqprofile.cpp
+    static AmpStateArgs amp_args;
 
     esp_console_cmd_t getCommand()
     {

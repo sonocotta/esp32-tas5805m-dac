@@ -19,6 +19,50 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Get and clear fault states
   - Decode fault errors
 
+## TOC
+
+- [ESP32 TAS5805M DAC Library](#esp32-tas5805m-dac-library)
+  - [Features](#features)
+  - [TOC](#toc)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Important notes](#important-notes)
+    - [Initialization](#initialization)
+  - [Digital Volume and Analog Gain](#digital-volume-and-analog-gain)
+    - [Setting and Getting Volume](#setting-and-getting-volume)
+    - [Setting and Getting Analog Gain](#setting-and-getting-analog-gain)
+  - [Power states](#power-states)
+    - [Setting and Getting Power State](#setting-and-getting-power-state)
+    - [Setting and Getting Mute State](#setting-and-getting-mute-state)
+    - [Setting and Getting DAC Mode](#setting-and-getting-dac-mode)
+  - [EQ controls](#eq-controls)
+    - [Setting and Getting EQ State and Gain](#setting-and-getting-eq-state-and-gain)
+    - [Setting and Getting EQ for Individual Channels](#setting-and-getting-eq-for-individual-channels)
+  - [EQ High-pass and Low-pass filer presets (Subwoofer and satellite profiles)](#eq-high-pass-and-low-pass-filer-presets-subwoofer-and-satellite-profiles)
+    - [Setting and Getting EQ Profile](#setting-and-getting-eq-profile)
+    - [Setting and Getting EQ Profile for Individual Channels](#setting-and-getting-eq-profile-for-individual-channels)
+  - [Modulation modes and switching frequency](#modulation-modes-and-switching-frequency)
+      - [BD Modulation](#bd-modulation)
+      - [1SPW Modulation](#1spw-modulation)
+      - [Hybrid Modulation](#hybrid-modulation)
+      - [Driver Switching frequency](#driver-switching-frequency)
+    - [Setting and Getting Modulation Mode](#setting-and-getting-modulation-mode)
+  - [Mixer controls](#mixer-controls)
+    - [Setting and Getting Mixer Mode](#setting-and-getting-mixer-mode)
+  - [Manual mixer controls](#manual-mixer-controls)
+    - [Get mixer gain](#get-mixer-gain)
+    - [Set mixer gain](#set-mixer-gain)
+  - [DAC state functions](#dac-state-functions)
+    - [Getting Sample Rate and BCK Ratio](#getting-sample-rate-and-bck-ratio)
+    - [Getting Power State and Automute State](#getting-power-state-and-automute-state)
+    - [Getting and Clearing Fault States](#getting-and-clearing-fault-states)
+    - [Decoding Fault Errors](#decoding-fault-errors)
+    - [Mapping Functions](#mapping-functions)
+  - [To Do](#to-do)
+  - [License](#license)
+  - [Contributing](#contributing)
+  - [Acknowledgements](#acknowledgements)
+
 ## Installation
 
 1. Clone the repository:
@@ -297,7 +341,7 @@ if (ret != ESP_OK) {
 
 ## EQ controls
 
-TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer-specific setup is underway.
+TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles described in the next sections.
 
 | Band | Center Frequency (Hz) | Frequency Range (Hz) | Q-Factor (Approx.) |
 |------|-----------------------|----------------------|--------------------|
@@ -327,6 +371,8 @@ Here are a few examples of different configurations that can be created with the
 
 ### Setting and Getting EQ State and Gain
 
+There are 2 ways EQ state can be configured. Original implementation goes as follows:
+
 To set the EQ state, use the `tas5805m_set_eq` function:
 
 ```cpp
@@ -349,7 +395,41 @@ if (ret != ESP_OK) {
 }
 ```
 
-To set the EQ gain, use the `tas5805m_set_eq_gain` function:
+Updated fucntion allows controlling if EQ settings are ganged or each channel individually controlled:
+
+To get the current EQ mode:
+
+```cpp
+TAS5805M_EQ_MODE eq_mode;
+esp_err_t ret = tas5805m_get_eq_mode(&eq_mode);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ mode");
+} else {
+    ESP_LOGI("TAS5805M", "Current EQ mode: %d", eq_mode);
+}
+```
+
+To set the EQ mode:
+
+```cpp
+TAS5805M_EQ_MODE eq_mode = TAS5805M_EQ_MODE_BIAMP; // Example: set to bi-amp mode
+esp_err_t ret = tas5805m_set_eq_mode(eq_mode);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ mode");
+}
+```
+
+Available EQ modes (see `TAS5805M_EQ_MODE` enum):
+
+| Mode Name           | Value   | Description                |
+|---------------------|---------|----------------------------|
+| EQ Off              | 0b0111  | EQ disabled                |
+| EQ On               | 0b0110  | EQ enabled (ganged)        |
+| Bi-amp EQ           | 0b1110  | Bi-amp mode, EQ enabled    |
+| Bi-amp EQ Off       | 0b1111  | Bi-amp mode, EQ disabled   |
+
+
+To set the EQ gain in ganged mode, use the `tas5805m_set_eq_gain` function:
 
 ```cpp
 int band = 1; // EQ band
@@ -360,7 +440,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-To get the current EQ gain, use the `tas5805m_get_eq_gain` function:
+To get the current EQ gain in ganged mode, use the `tas5805m_get_eq_gain` function:
 
 ```cpp
 int band = 1; // EQ band
@@ -372,6 +452,123 @@ if (ret != ESP_OK) {
     ESP_LOGI("TAS5805M", "EQ gain for band %d: %d", band, gain);
 }
 ```
+
+### Setting and Getting EQ for Individual Channels
+
+The TAS5805M DAC supports setting and getting EQ gain for each channel independently (useful in bi-amp or advanced configurations).  
+Use the following functions to control EQ gain for a specific channel:
+
+To set the EQ gain for a channel, use the `tas5805m_set_eq_gain_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+int band = 3;   // EQ band index
+int gain = 7;   // Gain value
+esp_err_t ret = tas5805m_set_eq_gain_channel(channel, band, gain);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ gain for channel");
+}
+```
+
+To get the current EQ gain for a channel, use the `tas5805m_get_eq_gain_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+int band = 3;   // EQ band index
+int gain;
+esp_err_t ret = tas5805m_get_eq_gain_channel(channel, band, &gain);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ gain for channel");
+} else {
+    ESP_LOGI("TAS5805M", "EQ gain for channel %d, band %d: %d", channel, band, gain);
+}
+```
+
+This allows for precise control of EQ settings per channel, enabling advanced speaker configurations and tuning.
+
+## EQ High-pass and Low-pass filer presets (Subwoofer and satellite profiles)
+
+Few presets were created to allow quick setup of Subwoofer/Satellite profiles for 2.1 or Bi-amp configuration. These cover 4-order High-pass and Low-pass filters, using 2 EQ bands, 2nd order Chebyshev filter type each. For HF profiles additional gain compenstaion were applied (3-rd EQ band) to flatten the response.
+
+These profiles are set as `TAS5805M_EQ_PROFILE` enum. Available profiles:
+
+| Number | Name      |
+|--------|-----------|
+| 0      | FLAT      |
+| 1      | LF_60HZ   |
+| 2      | LF_70HZ   |
+| 3      | LF_80HZ   |
+| 4      | LF_90HZ   |
+| 5      | LF_100HZ  |
+| 6      | LF_110HZ  |
+| 7      | LF_120HZ  |
+| 8      | LF_130HZ  |
+| 9      | LF_140HZ  |
+| 10     | LF_150HZ  |
+| 11     | HF_60HZ   |
+| 12     | HF_70HZ   |
+| 13     | HF_80HZ   |
+| 14     | HF_90HZ   |
+| 15     | HF_100HZ  |
+| 16     | HF_110HZ  |
+| 17     | HF_120HZ  |
+| 18     | HF_130HZ  |
+| 19     | HF_140HZ  |
+| 20     | HF_150HZ  |
+
+### Setting and Getting EQ Profile
+
+To get the current EQ profile:
+
+```cpp
+TAS5805M_EQ_PROFILE eq_profile;
+Tas5805m.getEqProfile(&eq_profile);
+ESP_LOGI("EQ", "Current EQ profile: %d", eq_profile);
+```
+
+To set the EQ profile:
+
+```cpp
+TAS5805M_EQ_PROFILE profile = LF_80HZ_CUTOFF; // For example, LF_80HZ
+Tas5805m.setEqProfile(profile);
+```
+
+You can also use the CLI command:
+
+```
+eqp get
+eqp set <profile_number>
+```
+
+### Setting and Getting EQ Profile for Individual Channels
+
+The TAS5805M DAC allows you to set and get EQ profiles for each channel independently, which is useful for bi-amp or multi-speaker setups.
+
+To set the EQ profile for a specific channel, use the `tas5805m_set_eq_profile_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+TAS5805M_EQ_PROFILE profile = LF_80HZ_CUTOFF; // Example profile
+esp_err_t ret = tas5805m_set_eq_profile_channel(channel, profile);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ profile for channel");
+}
+```
+
+To get the current EQ profile for a specific channel, use the `tas5805m_get_eq_profile_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+TAS5805M_EQ_PROFILE profile;
+esp_err_t ret = tas5805m_get_eq_profile_channel(channel, &profile);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ profile for channel");
+} else {
+    ESP_LOGI("TAS5805M", "EQ profile for channel %d: %d", channel, profile);
+}
+```
+
+This enables advanced per-channel EQ configuration for custom speaker
 
 ## Modulation modes and switching frequency
 
@@ -449,10 +646,9 @@ if (ret != ESP_OK) {
 
 Mixer settings allow to mix channel signals and route them to the appropriate channel. The typical setup for the mixer is to send Left channel audio to the Left driver, and Right channel to the Right 
 
-
 ![image](https://github.com/user-attachments/assets/d1a24adf-a417-48a1-b35d-39ee9d199587)
 
-A common alternative is to combine both channels into true Mono (you need to reduce both to -3Db to compensate for signal doubling)
+A common alternative is to combine both channels into true Mono (you need to reduce both to -3Db to compensate for signal summation)
 
 ![image](https://github.com/user-attachments/assets/390d1ecb-e3cd-4fff-8951-80fc318ec7d9)
 
@@ -463,7 +659,8 @@ Of course, you can decide to use a single channel or a mix of two, just keep in 
 To set the mixer mode, use the `tas5805m_set_mixer_mode` function:
 
 ```cpp
-TAS5805M_MIXER_MODE mode = MIXER_STEREO;
+// one of MIXER_STEREO, MIXER_STEREO_INVERSE, MIXER_MONO, MIXER_LEFT, MIXER_RIGHT
+TAS5805M_MIXER_MODE mode = MIXER_STEREO; 
 esp_err_t ret = tas5805m_set_mixer_mode(mode);
 if (ret != ESP_OK) {
     ESP_LOGE("TAS5805M", "Failed to set mixer mode");
@@ -480,6 +677,32 @@ if (ret != ESP_OK) {
 } else {
     ESP_LOGI("TAS5805M", "Current mixer mode: %d", mode);
 }
+```
+
+## Manual mixer controls
+
+For more flexibility, you can get or set the mixer gain for a specific channel. The gain value is a 32-bit integer in Q9.23 fixed-point format. There are helper functions to translate float into Q9.23 and vice versa in the "tas5805m-math.h" file
+
+### Get mixer gain
+
+```cpp
+uint32_t gain_9_23;
+esp_err_t ret = tas5805m_get_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, &gain_9_23);
+if (ret == ESP_OK) {
+    ESP_LOGI(TAG, "Mixer gain for channel %d is 0x%08x, which is decimal %.2f", 
+                    TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, 
+                    gain_9_23, 
+                    tas5805m_q9_23_to_float(gain_9_23)
+            );
+}
+```
+
+### Set mixer gain
+
+```cpp
+float gain = 2; // +6Db
+uint32_t gain_9_23 = tas5805m_float_to_q9_23(gain); // Q9.23 format
+esp_err_t ret = tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, gain_9_23);
 ```
 
 ## DAC state functions
@@ -608,14 +831,32 @@ To decode fault errors, use the `tas5805m_decode_faults` function:
 TAS5805M_FAULT fault = { .err0 = 1, .err1 = 0, .err2 = 0, .ot_warn = 1 };
 tas5805m_decode_faults(fault);
 ```
+### Mapping Functions
+
+These functions convert internal enums to human-readable strings for logging or UI.
+
+**Map amplifier state to string:**
+```cpp
+TAS5805M_CTRL_STATE state;
+tas5805m_get_state(&state);
+const char* state_str = tas5805m_map_amp_state(state);
+// Example: "PLAY", "MUTE", etc.
+```
+
+**Map sample rate enum to string:**
+```cpp
+TAS5805M_FS_FREQ freq;
+tas5805m_get_fs_freq(&freq);
+const char* freq_str = tas5805m_map_fs_freq(freq);
+// Example: "48K", "96K", etc.
+```
 
 ## To Do
 
-- [ ] - Implement EQ Bands as named enums to make things more clear
 - [ ] - Implement soft clipping controls
 - [ ] - Spread spectrum enable control
 - [ ] - Test different modulation modes vs Switching frequency vs PVDD in terms of efficiency
-- [ ] - Implement mixer granular controls
+- [x] - Implement mixer granular controls
 - [ ] - Digital audio level read control
 
 ## License

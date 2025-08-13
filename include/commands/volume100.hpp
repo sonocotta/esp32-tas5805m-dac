@@ -11,7 +11,7 @@ extern tas5805m Tas5805m;
 class Volume100Command : public Command
 {
 private:
-    static inline const char *TAG = "CMD.VOL100";
+    static constexpr const char *TAG = "CMD.VOL100";
 
     // Handler function for the "volume" command
     static int volume_command_handler(int argc, char **argv)
@@ -59,15 +59,7 @@ public:
         struct arg_end *end;
     };
 
-    static inline VolumeArgs volume_args = {
-        arg_int0(NULL, NULL, "[vol]", "Volume level, percent [0..124], default 100 (+0 Db)"),
-        arg_end(1)
-    };
-
-    String getName()
-    {
-        return "vol";
-    };
+    static VolumeArgs volume_args;
 
     esp_console_cmd_t getCommand()
     {

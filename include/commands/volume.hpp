@@ -11,7 +11,7 @@ extern tas5805m Tas5805m;
 class VolumeCommand : public Command
 {
 private:
-    static inline const char *TAG = "CMD.VOLUME";
+    static constexpr const char *TAG = "CMD.VOLUME";
 
     static float volume_to_db(uint8_t volume)
     {
@@ -64,15 +64,7 @@ public:
         struct arg_end *end;
     };
 
-    static inline VolumeArgs volume_args = {
-        arg_int0(NULL, NULL, "[volume]", "Volume level [0..255], default 48 (+0 Db)"),
-        arg_end(1)
-    };
-
-    String getName()
-    {
-        return "volume";
-    };
+    static VolumeArgs volume_args;
 
     esp_console_cmd_t getCommand()
     {

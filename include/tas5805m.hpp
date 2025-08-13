@@ -14,124 +14,219 @@
 #include "nvs_flash.h"
 #include "esp_system.h"
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
 #include "tas5805m.h"
-    class tas5805m
+#include "tas5805m-math.h"
+
+class tas5805m
+{
+private:
+    TwoWire *wire;
+
+public:
+    tas5805m(TwoWire *wire) : wire(wire) {};
+
+    esp_err_t deinit()
     {
-    private:
-        TwoWire *wire;
+        return tas5805m_deinit();
+    }
 
-    public:
-        tas5805m(TwoWire *wire) : 
-            wire(wire) {};
-
-        esp_err_t deinit() {
-            return tas5805m_deinit();
-        }
-
-        esp_err_t init() {
-            return tas5805m_init();
-        };
-
-        esp_err_t getVolume(uint8_t *vol) {
-            return tas5805m_get_volume(vol);
-        };
-
-        esp_err_t setVolume(uint8_t vol) {
-            return tas5805m_set_volume(vol);
-        };
-
-        esp_err_t getVolume100(uint8_t *vol) {
-            return tas5805m_get_volume_pct(vol);
-        };
-
-        esp_err_t setVolume100(uint8_t vol) {
-            return tas5805m_set_volume_pct(vol);
-        };
-
-        esp_err_t getState(TAS5805M_CTRL_STATE *state) {
-            return tas5805m_get_state(state);
-        };
-
-        esp_err_t setState(TAS5805M_CTRL_STATE state) {
-            return tas5805m_set_state(state);
-        };
-
-        esp_err_t getDacMode(TAS5805M_DAC_MODE *mode) {
-            return tas5805m_get_dac_mode(mode);
-        };
-
-        esp_err_t setDacMode(TAS5805M_DAC_MODE mode) {
-            return tas5805m_set_dac_mode(mode);
-        };
-
-        esp_err_t getEqEnabled(bool *enabled) {
-            return tas5805m_get_eq(enabled);
-        };
-
-        esp_err_t setEqEnabled(bool enabled) {
-            return tas5805m_set_eq(enabled);
-        };
-
-        esp_err_t getEqGain(int band, int *gain) {
-            return tas5805m_get_eq_gain(band, gain);
-        };
-
-        esp_err_t setEqGain(int band, int gain) {
-            return tas5805m_set_eq_gain(band, gain);
-        };
-
-        esp_err_t getModulationMode(TAS5805M_MOD_MODE *mode, TAS5805M_SW_FREQ *freq, TAS5805M_BD_FREQ *bd_freq) {
-            return tas5805m_get_modulation_mode(mode, freq, bd_freq);
-        };
-
-        esp_err_t setModulationMode(TAS5805M_MOD_MODE mode, TAS5805M_SW_FREQ freq, TAS5805M_BD_FREQ bd_freq) {
-            return tas5805m_set_modulation_mode(mode, freq, bd_freq);
-        };
-
-        esp_err_t getAnalogGain(uint8_t *gain) {
-            return tas5805m_get_again(gain);
-        };
-
-        esp_err_t setAnalogGain(uint8_t gain) {
-            return tas5805m_set_again(gain);
-        };
-
-        esp_err_t getMixerMode(TAS5805M_MIXER_MODE *mode) {
-            return tas5805m_get_mixer_mode(mode);
-        };
-
-        esp_err_t setMixerMode(TAS5805M_MIXER_MODE mode) {
-            return tas5805m_set_mixer_mode(mode);
-        };
-
-        esp_err_t getFsFreq(TAS5805M_FS_FREQ *freq) {
-            return tas5805m_get_fs_freq(freq);
-        };
-
-        esp_err_t getBckRatio(uint8_t *ratio) {
-            return tas5805m_get_bck_ratio(ratio);
-        };
-
-        esp_err_t getPowerState(TAS5805M_CTRL_STATE *state) {
-            return tas5805m_get_power_state(state);
-        };
-
-        esp_err_t getAutomuteState(bool *is_r_muted, bool *is_l_muted) {
-            return tas5805m_get_automute_state(is_r_muted, is_l_muted);
-        };
-
-        esp_err_t getFaultState(TAS5805M_FAULT* fault) {
-            return tas5805m_get_faults(fault);
-        };
-
-        esp_err_t clearFaultState() {
-            return tas5805m_clear_faults();
-        };
-
-        void decodeFaults(TAS5805M_FAULT fault){
-            tas5805m_decode_faults(fault);
-        }
+    esp_err_t init()
+    {
+        return tas5805m_init();
     };
+
+    esp_err_t getVolume(uint8_t *vol)
+    {
+        return tas5805m_get_volume(vol);
+    };
+
+    esp_err_t setVolume(uint8_t vol)
+    {
+        return tas5805m_set_volume(vol);
+    };
+
+    esp_err_t getVolume100(uint8_t *vol)
+    {
+        return tas5805m_get_volume_pct(vol);
+    };
+
+    esp_err_t setVolume100(uint8_t vol)
+    {
+        return tas5805m_set_volume_pct(vol);
+    };
+
+    esp_err_t getState(TAS5805M_CTRL_STATE *state)
+    {
+        return tas5805m_get_state(state);
+    };
+
+    esp_err_t setState(TAS5805M_CTRL_STATE state)
+    {
+        return tas5805m_set_state(state);
+    };
+
+    esp_err_t getDacMode(TAS5805M_DAC_MODE *mode)
+    {
+        return tas5805m_get_dac_mode(mode);
+    };
+
+    esp_err_t setDacMode(TAS5805M_DAC_MODE mode)
+    {
+        return tas5805m_set_dac_mode(mode);
+    };
+
+    esp_err_t getEqEnabled(bool *enabled)
+    {
+        return tas5805m_get_eq(enabled);
+    };
+
+    esp_err_t setEqEnabled(bool enabled)
+    {
+        return tas5805m_set_eq(enabled);
+    };
+
+    esp_err_t getEqMode(TAS5805M_EQ_MODE *mode)
+    {
+        return tas5805m_get_eq_mode(mode);
+    };
+
+    esp_err_t setEqMode(TAS5805M_EQ_MODE mode)
+    {
+        return tas5805m_set_eq_mode(mode);
+    };
+
+    esp_err_t getEqGain(int band, int *gain)
+    {
+        return tas5805m_get_eq_gain(band, gain);
+    };
+
+    esp_err_t setEqGain(int band, int gain)
+    {
+        return tas5805m_set_eq_gain(band, gain);
+    };
+
+    esp_err_t getEqGain(TAS5805M_EQ_CHANNELS channel, int band, int *gain)
+    {
+        return tas5805m_get_eq_gain_channel(channel, band, gain);
+    };
+
+    esp_err_t setEqGain(TAS5805M_EQ_CHANNELS channel, int band, int gain)
+    {
+        return tas5805m_set_eq_gain_channel(channel, band, gain);
+    };
+
+    esp_err_t getEqProfile(TAS5805M_EQ_PROFILE *profile)
+    {
+        return tas5805m_get_eq_profile(profile);
+    };
+
+    esp_err_t setEqProfile(TAS5805M_EQ_PROFILE profile)
+    {
+        return tas5805m_set_eq_profile(profile);
+    };
+
+    esp_err_t getEqProfile(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE *profile)
+    {
+        return tas5805m_get_eq_profile_channel(channel, profile);
+    };
+
+    esp_err_t setEqProfile(TAS5805M_EQ_CHANNELS channel, TAS5805M_EQ_PROFILE profile)
+    {
+        return tas5805m_set_eq_profile_channel(channel, profile);
+    };
+
+    esp_err_t getModulationMode(TAS5805M_MOD_MODE *mode, TAS5805M_SW_FREQ *freq, TAS5805M_BD_FREQ *bd_freq)
+    {
+        return tas5805m_get_modulation_mode(mode, freq, bd_freq);
+    };
+
+    esp_err_t setModulationMode(TAS5805M_MOD_MODE mode, TAS5805M_SW_FREQ freq, TAS5805M_BD_FREQ bd_freq)
+    {
+        return tas5805m_set_modulation_mode(mode, freq, bd_freq);
+    };
+
+    esp_err_t getAnalogGain(uint8_t *gain)
+    {
+        return tas5805m_get_again(gain);
+    };
+
+    esp_err_t setAnalogGain(uint8_t gain)
+    {
+        return tas5805m_set_again(gain);
+    };
+
+    esp_err_t getMixerMode(TAS5805M_MIXER_MODE *mode)
+    {
+        return tas5805m_get_mixer_mode(mode);
+    };
+
+    esp_err_t setMixerMode(TAS5805M_MIXER_MODE mode)
+    {
+        return tas5805m_set_mixer_mode(mode);
+    };
+
+    esp_err_t getMixerGainRaw(TAS5805M_MIXER_CHANNELS channel, uint32_t *gain)
+    {
+        return tas5805m_get_mixer_gain(channel, gain);
+    };
+
+    esp_err_t getMixerGain(TAS5805M_MIXER_CHANNELS channel, float *gain)
+    {
+        uint32_t gain_9_23;
+        esp_err_t ret = tas5805m_get_mixer_gain(channel, &gain_9_23);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        *gain = tas5805m_q9_23_to_float(gain_9_23);
+        return ESP_OK;
+    };
+
+    esp_err_t setMixerGainRaw(TAS5805M_MIXER_CHANNELS channel, uint32_t gain)
+    {
+        return tas5805m_set_mixer_gain(channel, gain);
+    };
+
+    esp_err_t setMixerGain(TAS5805M_MIXER_CHANNELS channel, float gain)
+    {
+        uint32_t gain_9_23 = tas5805m_float_to_q9_23(gain);
+        return tas5805m_set_mixer_gain(channel, gain_9_23);
+    };
+
+    esp_err_t getFsFreq(TAS5805M_FS_FREQ *freq)
+    {
+        return tas5805m_get_fs_freq(freq);
+    };
+
+    esp_err_t getBckRatio(uint8_t *ratio)
+    {
+        return tas5805m_get_bck_ratio(ratio);
+    };
+
+    esp_err_t getPowerState(TAS5805M_CTRL_STATE *state)
+    {
+        return tas5805m_get_power_state(state);
+    };
+
+    esp_err_t getAutomuteState(bool *is_r_muted, bool *is_l_muted)
+    {
+        return tas5805m_get_automute_state(is_r_muted, is_l_muted);
+    };
+
+    esp_err_t getFaultState(TAS5805M_FAULT *fault)
+    {
+        return tas5805m_get_faults(fault);
+    };
+
+    esp_err_t clearFaultState()
+    {
+        return tas5805m_clear_faults();
+    };
+
+    void decodeFaults(TAS5805M_FAULT fault)
+    {
+        tas5805m_decode_faults(fault);
+    }
+};
