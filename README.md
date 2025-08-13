@@ -297,7 +297,7 @@ if (ret != ESP_OK) {
 
 ## EQ controls
 
-TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer-specific setup is underway.
+TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles described in the next sections.
 
 | Band | Center Frequency (Hz) | Frequency Range (Hz) | Q-Factor (Approx.) |
 |------|-----------------------|----------------------|--------------------|
@@ -327,6 +327,8 @@ Here are a few examples of different configurations that can be created with the
 
 ### Setting and Getting EQ State and Gain
 
+There are 2 ways EQ state can be configured. Original implementation goes as follows:
+
 To set the EQ state, use the `tas5805m_set_eq` function:
 
 ```cpp
@@ -349,7 +351,41 @@ if (ret != ESP_OK) {
 }
 ```
 
-To set the EQ gain, use the `tas5805m_set_eq_gain` function:
+Updated fucntion allows controlling if EQ settings are ganged or each channel individually controlled:
+
+To get the current EQ mode:
+
+```cpp
+TAS5805M_EQ_MODE eq_mode;
+esp_err_t ret = tas5805m_get_eq_mode(&eq_mode);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ mode");
+} else {
+    ESP_LOGI("TAS5805M", "Current EQ mode: %d", eq_mode);
+}
+```
+
+To set the EQ mode:
+
+```cpp
+TAS5805M_EQ_MODE eq_mode = TAS5805M_EQ_MODE_BIAMP; // Example: set to bi-amp mode
+esp_err_t ret = tas5805m_set_eq_mode(eq_mode);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ mode");
+}
+```
+
+Available EQ modes (see `TAS5805M_EQ_MODE` enum):
+
+| Mode Name           | Value   | Description                |
+|---------------------|---------|----------------------------|
+| EQ Off              | 0b0111  | EQ disabled                |
+| EQ On               | 0b0110  | EQ enabled (ganged)        |
+| Bi-amp EQ           | 0b1110  | Bi-amp mode, EQ enabled    |
+| Bi-amp EQ Off       | 0b1111  | Bi-amp mode, EQ disabled   |
+
+
+To set the EQ gain in ganged mode, use the `tas5805m_set_eq_gain` function:
 
 ```cpp
 int band = 1; // EQ band
@@ -360,7 +396,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-To get the current EQ gain, use the `tas5805m_get_eq_gain` function:
+To get the current EQ gain in ganged mode, use the `tas5805m_get_eq_gain` function:
 
 ```cpp
 int band = 1; // EQ band
@@ -372,6 +408,39 @@ if (ret != ESP_OK) {
     ESP_LOGI("TAS5805M", "EQ gain for band %d: %d", band, gain);
 }
 ```
+
+### Setting and Getting EQ for Individual Channels
+
+The TAS5805M DAC supports setting and getting EQ gain for each channel independently (useful in bi-amp or advanced configurations).  
+Use the following functions to control EQ gain for a specific channel:
+
+To set the EQ gain for a channel, use the `tas5805m_set_eq_gain_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+int band = 3;   // EQ band index
+int gain = 7;   // Gain value
+esp_err_t ret = tas5805m_set_eq_gain_channel(channel, band, gain);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ gain for channel");
+}
+```
+
+To get the current EQ gain for a channel, use the `tas5805m_get_eq_gain_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+int band = 3;   // EQ band index
+int gain;
+esp_err_t ret = tas5805m_get_eq_gain_channel(channel, band, &gain);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ gain for channel");
+} else {
+    ESP_LOGI("TAS5805M", "EQ gain for channel %d, band %d: %d", channel, band, gain);
+}
+```
+
+This allows for precise control of EQ settings per channel, enabling advanced speaker configurations and tuning.
 
 ## EQ High-pass and Low-pass filer presets (Subwoofer and satellite profiles)
 
@@ -427,7 +496,35 @@ eqp get
 eqp set <profile_number>
 ```
 
-TODO: At this moment all profiles are applied to both channels. For bi-amp it would be requires to apply them to LEFT and RIGHT channles individually.
+### Setting and Getting EQ Profile for Individual Channels
+
+The TAS5805M DAC allows you to set and get EQ profiles for each channel independently, which is useful for bi-amp or multi-speaker setups.
+
+To set the EQ profile for a specific channel, use the `tas5805m_set_eq_profile_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+TAS5805M_EQ_PROFILE profile = LF_80HZ_CUTOFF; // Example profile
+esp_err_t ret = tas5805m_set_eq_profile_channel(channel, profile);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set EQ profile for channel");
+}
+```
+
+To get the current EQ profile for a specific channel, use the `tas5805m_get_eq_profile_channel` function:
+
+```cpp
+TAS5805M_EQ_CHANNELS channel = TAS5805M_EQ_CHANNELS_LEFT; // or TAS5805M_EQ_CHANNELS_RIGHT
+TAS5805M_EQ_PROFILE profile;
+esp_err_t ret = tas5805m_get_eq_profile_channel(channel, &profile);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get EQ profile for channel");
+} else {
+    ESP_LOGI("TAS5805M", "EQ profile for channel %d: %d", channel, profile);
+}
+```
+
+This enables advanced per-channel EQ configuration for custom speaker
 
 ## Modulation modes and switching frequency
 
