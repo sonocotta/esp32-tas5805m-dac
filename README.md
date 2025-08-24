@@ -10,6 +10,7 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Set and get mute state
   - Set and get DAC mode
   - Set and get EQ state and gain
+  - Set and get EQ profiles (subwoofer and satellite)
   - Set and get modulation mode
   - Set and get analog gain
   - Set and get mixer mode
@@ -19,11 +20,16 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Get and clear fault states
   - Decode fault errors
 
-## TOC
+Work in progress
+  - Configure soft-clipping
+  - Set precise EQ parameters (BQ-coefficients)
+  - Configure spread-spectrum settings
+
+## Table of Contents
 
 - [ESP32 TAS5805M DAC Library](#esp32-tas5805m-dac-library)
   - [Features](#features)
-  - [TOC](#toc)
+  - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Important notes](#important-notes)
@@ -32,6 +38,7 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
     - [Setting and Getting Volume](#setting-and-getting-volume)
     - [Setting and Getting Analog Gain](#setting-and-getting-analog-gain)
   - [Power states](#power-states)
+    - [Power measurements on Louder-ESP32 board](#power-measurements-on-louder-esp32-board)
     - [Setting and Getting Power State](#setting-and-getting-power-state)
     - [Setting and Getting Mute State](#setting-and-getting-mute-state)
     - [Setting and Getting DAC Mode](#setting-and-getting-dac-mode)
@@ -42,10 +49,11 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
     - [Setting and Getting EQ Profile](#setting-and-getting-eq-profile)
     - [Setting and Getting EQ Profile for Individual Channels](#setting-and-getting-eq-profile-for-individual-channels)
   - [Modulation modes and switching frequency](#modulation-modes-and-switching-frequency)
-      - [BD Modulation](#bd-modulation)
-      - [1SPW Modulation](#1spw-modulation)
-      - [Hybrid Modulation](#hybrid-modulation)
-      - [Driver Switching frequency](#driver-switching-frequency)
+    - [BD Modulation](#bd-modulation)
+    - [1SPW Modulation](#1spw-modulation)
+    - [Hybrid Modulation](#hybrid-modulation)
+    - [Driver Switching frequency](#driver-switching-frequency)
+    - [Power consumption testing](#power-consumption-testing)
     - [Setting and Getting Modulation Mode](#setting-and-getting-modulation-mode)
   - [Mixer controls](#mixer-controls)
     - [Setting and Getting Mixer Mode](#setting-and-getting-mixer-mode)
@@ -254,6 +262,23 @@ Power state is one of the following states:
 | **Unused**       | Set **TAS5805M_CTRL_DEEP_SLEEP** to ensure long life on batteries while unused | Didn't measure, should be lower than TAS5805M_CTRL_SLEEP |
 
 The default is PLAY state, and it will keep in PLAY forever unless specifically told to
+
+### Power measurements on Louder-ESP32 board
+
+I did some testing to analyze power consumption in different power modes under different VCC voltage. All tests were performed under CLK and WS signal present and DATA sending zero signal. Apart from DAC, power is consumed by running ESP32 and corresponding power converters.
+
+| DAC mode (no playback) | 5V     |        | 9V     |        | 12V    |        | 15V    |        | 20V    |        | 26V    |        |
+|------------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+|                        | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A |
+| PLAY                   | 0.35   | 0.07   | 0.48   | 0.05   | 0.6    | 0.05   | 0.75   | 0.05   | 1.16   | 0.059  | 2.9    | 0.11   |
+| HIGH-Z                 | 0.3    | 0.06   | 0.34   | 0.04   | 0.36   | 0.03   | 0.4    | 0.028  | 0.5    | 0.025  | 0.6    | 0.023  |
+| MUTE                   | 0.21   | 0.042  | 0.2    | 0.02   | 0.2    | 0.018  | 0.21   | 0.015  | 0.24   | 0.014  | 0.286  | 0.011  |
+| SLEEP                  | 0.24   | 0.048  | 0.26   | 0.028  | 0.28   | 0.024  | 0.33   | 0.02   | 0.4    | 0.019  | 0.49   | 0.019  |
+| DEEPSLEEP              | 0.21   | 0.042  | 0.2    | 0.02   | 0.2    | 0.018  | 0.21   | 0.014  | 0.24   | 0.014  | 0.31   | 0.012  |
+
+<insert chart>
+
+**Conclusion:** MUTE mode and DEEP-SLEEP are the most efficient ones. In the practical application MUTE and PLAY modes are enough to cover normal and idling modes.
 
 ### Setting and Getting Power State
 
@@ -572,9 +597,9 @@ This enables advanced per-channel EQ configuration for custom speaker
 
 ## Modulation modes and switching frequency
 
-Both modulation scheme and switching frequency have an impact on power consumption / switching losses versus EMI noise. 
+Modulation mode affects DAC efficiency, while somewhat compromising THD in result of higher one. Rule of thumb: while running under lower VCC (12V or less), effciency benefit may not be that big, to compromise THD. On higher VCC, loewr efficiency affects DAC stability, it cannot sustain full power without some king of active cooling (heatsink, fan or both), so it makes more sense to pick more efficient power mode as default
 
-#### BD Modulation
+### BD Modulation
 
 > This is a modulation scheme that allows operation without the classic LC reconstruction filter when the amp is
 driving an inductive load with short speaker wires. Each output is switching from 0 volts to the supply voltage.
@@ -584,7 +609,7 @@ The duty cycle of OUTPx is less than 50%, and OUTNx is greater than 50% for nega
 voltage across the load sits at 0 V throughout most of the switching period, reducing the switching current, which
 reduces any I2R losses in the load.
 
-#### 1SPW Modulation
+### 1SPW Modulation
 
 > The 1SPW mode alters the normal modulation scheme in order to achieve higher efficiency with a slight penalty
 in THD degradation and more attention required in the output filter selection. In Low Idle Current mode, the
@@ -593,7 +618,7 @@ decrease and one will increase. The decreasing output signal will quickly rail t
 modulation takes place through the rising output. The result is that only one output is switching during a majority
 of the audio cycle. Efficiency is improved in this mode due to the reduction of switching losses.
 
-#### Hybrid Modulation
+### Hybrid Modulation
 
 > Hybrid Modulation is designed to minimize power loss without compromising the THD+N performance, and is
 optimized for battery-powered applications. With Hybrid modulation enabled, the device detects the input signal level
@@ -602,7 +627,7 @@ maintains the same audio performance level as the BD Modulation. In order to min
 low switching frequency (For example, Fsw = 384 kHz) with a proper LC filter (15 µH + 0.68 µF or 22 µH + 0.68
 µF) is recommended
 
-#### Driver Switching frequency
+### Driver Switching frequency
 
 TAS5805M supports different switching frequencies, which mostly affect the balance between output filter losses and EMI noise. Below is the recommendation from TI
 
@@ -613,6 +638,33 @@ TAS5805M supports different switching frequencies, which mostly affect the balan
 - With an inductor as the output filter, DAC can achieve ultra-low idle current (with Hybrid Modulation or 1SPW Modulation) and keep a large EMI margin. The switching frequency of TAS5805M can be adjusted from 384 kHz to 768 kHz. Higher switching frequency means a smaller Inductor value needed
   - With 768 kHz switching frequency. Designers can select 10uH + 0.68 µF or 4.7 µH +0.68 µF as the output filter, which will help customers to save the Inductor size with the same rated current during the inductor selection. With 4.7uH + 0.68uF, make sure PVDD ≤ 12V to avoid the large ripple current to trigger the OC threshold (5A)
   - With 384 kHz switching frequency. Designers can select 22 µH + 0.68 µF or 15 µH + 0.68 µF or 10 µH + 0.68 µF as the output filter, this will help customers to save power dissipation for some battery power supply applications. With 10 µH + 0.68 µF, make sure PVDD ≤ 12 V to avoid the large ripple current from triggering the OC threshold (5 A).
+
+### Power consumption testing
+
+Based on my testing, switching frequency and DB-frequency have very little impact on the power consumption and rather affect EMI of the DAC. 
+
+| Efficiency (BD-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (1SPW-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (HYBRID-mode, VCC=5V) | FS freq,kHz |  |  |  |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| BD freq, kHz | 768k | 576k | 480k | 384k | BD freq, kHz | 768k | 576k | 480k | 384k | BD freq, kHz | 768k | 576k | 480k | 384k |
+| 80 | 70% | 70% | 71% | 71% | 80 | 71% | 72% | 72% | 72% | 80 | 70% | 69% | 70% | 71% |
+| 100 | 70% | 71% | 71% | 71% | 100 | 72% | 72% | 73% | 72% | 100 | 69% | 70% | 71% | 71% |
+| 120 | 70% | 71% | 71% | 71% | 120 | 72% | 72% | 73% | 72% | 120 | 69% | 70% | 71% | 71% |
+| 175 | 70% | 71% | 71% | 71% | 175 | 71% | 72% | 72% | n/a | 175 | 70% | 70% | 71% | 71% |
+
+On the other hand, modulation mode has considerable affect on the power consumption/losses and that difference is higher for higher VCC.
+Measured as 100 Hz sin tone, amplitude for each VCC was adjusted to not cross the power rails (otherwise higher voltage would not use power stage fully).
+
+| DAC mode (Sin tone / 100 Hz): Modulation mode / SW freq / BD freq | 5V |  | 9V |  | 12V |  | 15V |  | 20V |  | 26V |  |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|  | Pwr, W | Eff, % | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A |
+| Speaker power, W ->  |  | 1.621 |  | 6.472 |  | 6.472 |  | 6.472 |  | 25.705 |  | 25.705 |
+| BD/768k/80k | 2.330 | 70% | 8.200 | 79% | 8.256 | 78% | 8.535 | 76% | 33.400 | 77% | 38.000 | 68% |
+| 1SPW/768k/80k | 2.28 | 71% | 7.99 | 81% | 8.05 | 80% | 8.31 | 78% | 31.7 | 81% | 32.8 | 78% |
+| HYBRID/768k/80k | 2.330 | 70% | 8.16 | 79% | 8.34 | 78% | 8.59 | 75% | 33.8 | 76% | 37.7 | 68% |
+
+<insert chart>
+
+Conclusion: 1SPW is recommended for higher power efficiency, especially for VCC above 15V. For voltages below 12V the benefit is not that bid, for BD-mode is recommended for lower THD values. 
 
 ### Setting and Getting Modulation Mode
 
