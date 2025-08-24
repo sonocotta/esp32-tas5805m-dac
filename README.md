@@ -10,6 +10,7 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Set and get mute state
   - Set and get DAC mode
   - Set and get EQ state and gain
+  - Set and get EQ profiles (subwoofer and satellite)
   - Set and get modulation mode
   - Set and get analog gain
   - Set and get mixer mode
@@ -19,11 +20,16 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Get and clear fault states
   - Decode fault errors
 
-## TOC
+Work in progress
+  - Configure soft-clipping
+  - Set precise EQ parameters (BQ-coefficients)
+  - Configure spread-spectrum settings
+
+## Table of Contents
 
 - [ESP32 TAS5805M DAC Library](#esp32-tas5805m-dac-library)
   - [Features](#features)
-  - [TOC](#toc)
+  - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Important notes](#important-notes)
@@ -32,6 +38,7 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
     - [Setting and Getting Volume](#setting-and-getting-volume)
     - [Setting and Getting Analog Gain](#setting-and-getting-analog-gain)
   - [Power states](#power-states)
+    - [Power measurements on Louder-ESP32 board](#power-measurements-on-louder-esp32-board)
     - [Setting and Getting Power State](#setting-and-getting-power-state)
     - [Setting and Getting Mute State](#setting-and-getting-mute-state)
     - [Setting and Getting DAC Mode](#setting-and-getting-dac-mode)
@@ -42,10 +49,11 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
     - [Setting and Getting EQ Profile](#setting-and-getting-eq-profile)
     - [Setting and Getting EQ Profile for Individual Channels](#setting-and-getting-eq-profile-for-individual-channels)
   - [Modulation modes and switching frequency](#modulation-modes-and-switching-frequency)
-      - [BD Modulation](#bd-modulation)
-      - [1SPW Modulation](#1spw-modulation)
-      - [Hybrid Modulation](#hybrid-modulation)
-      - [Driver Switching frequency](#driver-switching-frequency)
+    - [BD Modulation](#bd-modulation)
+    - [1SPW Modulation](#1spw-modulation)
+    - [Hybrid Modulation](#hybrid-modulation)
+    - [Driver Switching frequency](#driver-switching-frequency)
+    - [Power consumption testing](#power-consumption-testing)
     - [Setting and Getting Modulation Mode](#setting-and-getting-modulation-mode)
   - [Mixer controls](#mixer-controls)
     - [Setting and Getting Mixer Mode](#setting-and-getting-mixer-mode)
@@ -196,7 +204,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-The second way to change the volume is to use DAC native scale, which is [0..255] where 0 is +24 dB gain (that's loud!), and 255 is mute. To set the volume this way, use the `tas5805m_set_volume` function (volume is in the range [TAS5805M_VOLUME_MIN..TAS5805M_VOLUME_MAX], default is `TAS5805M_VOLUME_DEFAULT = 48`, which is +0 Db):
+The second way to change the volume is to use the DAC native scale, which is [0..255] where 0 is +24 dB gain (that's loud!), and 255 is mute. To set the volume this way, use the `tas5805m_set_volume` function (volume is in the range [TAS5805M_VOLUME_MIN..TAS5805M_VOLUME_MAX], default is `TAS5805M_VOLUME_DEFAULT = 48`, which is +0 Db):
 
 ```cpp
 uint8_t volume = 80; // Volume level (0-255)
@@ -255,6 +263,49 @@ Power state is one of the following states:
 
 The default is PLAY state, and it will keep in PLAY forever unless specifically told to
 
+### Power measurements on Louder-ESP32 board
+
+I did some testing to analyze power consumption in different power modes under different VCC voltage. All tests were performed under CLK and WS signal present and DATA sending zero signal. Apart from DAC, power is consumed by running ESP32 and corresponding power converters.
+
+| DAC mode (no playback) | 5V     |        | 9V     |        | 12V    |        | 15V    |        | 20V    |        | 26V    |        |
+|------------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+|                        | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A |
+| PLAY                   | 0.35   | 0.07   | 0.48   | 0.05   | 0.6    | 0.05   | 0.75   | 0.05   | 1.16   | 0.059  | 2.9    | 0.11   |
+| HIGH-Z                 | 0.3    | 0.06   | 0.34   | 0.04   | 0.36   | 0.03   | 0.4    | 0.028  | 0.5    | 0.025  | 0.6    | 0.023  |
+| MUTE                   | 0.21   | 0.042  | 0.2    | 0.02   | 0.2    | 0.018  | 0.21   | 0.015  | 0.24   | 0.014  | 0.286  | 0.011  |
+| SLEEP                  | 0.24   | 0.048  | 0.26   | 0.028  | 0.28   | 0.024  | 0.33   | 0.02   | 0.4    | 0.019  | 0.49   | 0.019  |
+| DEEPSLEEP              | 0.21   | 0.042  | 0.2    | 0.02   | 0.2    | 0.018  | 0.21   | 0.014  | 0.24   | 0.014  | 0.31   | 0.012  |
+
+<img width="740" height="485" alt="image" src="https://github.com/user-attachments/assets/f305df10-74d2-4e9c-8691-637d3848895e" />
+
+**Conclusion:** MUTE mode and DEEP-SLEEP are the most efficient ones. In the practical application, MUTE and PLAY modes are enough to cover normal and idling modes.
+
+Additional tests were performed to analyze the thermal stability of the Louder-ESP32 board under high load. These tests output a 100Hz sin-wave with a close to rail-to-rail signal (adjutsing volume and gain) into an 8-Ohm load (both BD and 1SPW modulation). I started testing with bare naked DAC, as soon as I reached the point where DAC was entering thermal shutdown, I added a small radiator on top, and once more, a larger radiator on the back side (where the thermal pad is connected to the ground plane)
+
+<img width="739" height="369" alt="image" src="https://github.com/user-attachments/assets/0408f584-9626-4400-984a-abee3c63c6ce" />
+<img width="739" height="369" alt="image" src="https://github.com/user-attachments/assets/1f1b252e-396d-44d0-a9dd-9714f4a644d6" />
+
+
+| SIN wave, 100 Hz |                 |       | BD-mode               |                   |               |           |                      |                               |                              | 1-SPW mode      |                       |                   |               |           |                      |                               |                              |
+|------------------|-----------------|-------|-----------------------|-------------------|---------------|-----------|----------------------|-------------------------------|------------------------------|-----------------|-----------------------|-------------------|---------------|-----------|----------------------|-------------------------------|------------------------------|
+| VCC, V           | Speaker voltage | Ratio | Speakers power RMS, W | Consumed power, W | Efficiency, % | Losses, W | Naked chip, 1min run | Heat Sink 10x15mm (top cover) | Heat sink 32x32mm(back side) | Speaker voltage | Speakers power RMS, W | Consumed power, W | Efficiency, % | Losses, W | Naked chip, 1min run | Heat Sink 10x15mm (top cover) | Heat sink 32x32mm(back side) |
+| 5                | 3.09            | 1.62  | 2.4                   | 3.2               | 75%           | 0.8       | stable               | -                             | -                            | 3.09            | 2.4                   | 3.1               | 76%           | 0.7       | stable               | -                             | -                            |
+| 6                | 3.47            | 1.73  | 3.0                   | 4.0               | 75%           | 1.0       | stable               | -                             | -                            | 3.49            | 3.0                   | 3.9               | 78%           | 0.9       | stable               | -                             | -                            |
+| 7                | 3.92            | 1.78  | 3.8                   | 5.0               | 77%           | 1.2       | stable               | -                             | -                            | 4.05            | 4.1                   | 5.4               | 77%           | 1.3       | stable               | -                             | -                            |
+| 8                | 4.36            | 1.83  | 4.8                   | 6.1               | 77%           | 1.4       | stable               | -                             | -                            | 4.37            | 4.8                   | 5.9               | 80%           | 1.2       | stable               | -                             | -                            |
+| 9                | 5.49            | 1.64  | 7.5                   | 9.4               | 80%           | 1.9       | stable               | -                             | -                            | 5.49            | 7.5                   | 9.2               | 82%           | 1.6       | stable               | -                             | -                            |
+| 10               | 6.48            | 1.54  | 10.5                  | 12.8              | 82%           | 2.3       | stable               | -                             | -                            | 6.48            | 10.5                  | 12.7              | 83%           | 2.2       | stable               | -                             | -                            |
+| 11               | 6.90            | 1.59  | 11.9                  | 14.7              | 81%           | 2.8       | stable               | -                             | -                            | 6.90            | 11.9                  | 14.2              | 84%           | 2.3       | stable               | -                             | -                            |
+| 12               | 7.33            | 1.64  | 13.4                  | 16.9              | 80%           | 3.4       | stable               | -                             | -                            | 7.33            | 13.4                  | 16.4              | 82%           | 3.0       | stable               | -                             | -                            |
+| 13               | 7.64            | 1.70  | 14.6                  | 18.8              | 78%           | 4.2       | stable               | -                             | -                            | 7.66            | 14.7                  | 18.3              | 80%           | 3.7       | stable               | -                             | -                            |
+| 14               | 8.74            | 1.60  | 19.1                  | 23.9              | 80%           | 4.8       | stable               | -                             | -                            | 8.74            | 19.1                  | 23.2              | 82%           | 4.1       | stable               | -                             | -                            |
+| 15               | 9.22            | 1.63  | 21.3                  | 27.0              | 79%           | 5.7       | OT warning           | stable                        | -                            | 9.21            | 21.2                  | 25.8              | 82%           | 4.6       | stable               | -                             | -                            |
+| 16               | 9.70            | 1.65  | 23.5                  | 30.0              | 78%           | 6.5       | shutdown             | OT warning                    | stable                       | 9.70            | 23.5                  | 28.7              | 82%           | 5.2       | OT warning           | -                             | -                            |
+| 17               | 10.28           | 1.65  | 26.4                  | 33.0              | 80%           | 6.6       | -                    | shutdown                      | OT warning                   | 10.29           | 26.5                  | 33.0              | 80%           | 6.5       | OT warning           | OT warning                    | -                            |
+| 18               | 11.40           | 1.58  | 32.5                  | 41.0              | 79%           | 8.5       | -                    | -                             | shutdown                     | 11.37           | 32.3                  | 40.2              | 80%           | 7.9       | shutdown             | OT warning                    | OT warning                   |
+
+**Conclusion:** Long-term operation without an additional heatsink is only possible up until VCC=15V. Adding a passive heatsink only helps to sustain 1-2 more volts, more power requires active cooling.
+
 ### Setting and Getting Power State
 
 To set the power state, use the `tas5805m_set_state` function:
@@ -307,7 +358,7 @@ if (ret != ESP_OK) {
 
 ### Setting and Getting DAC Mode
 
-TAS5805M has a bridge mode of operation, that causes both output drivers to synchronize and push out the same audio with double the power.  In that case single speaker is expected to be connected across channels, so remember to reconnect speakers if you're changing to bridge mode. 
+TAS5805M has a bridge mode of operation, which causes both output drivers to synchronize and push out the same audio with double the power.  In that case single speaker is expected to be connected across channels, so remember to reconnect speakers if you're changing to bridge mode. 
 
 |   | BTL (default, STEREO) | PBTL (MONO, rougly double power) |
 |---|-----------------------|---------------------------|
@@ -341,7 +392,7 @@ if (ret != ESP_OK) {
 
 ## EQ controls
 
-TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles described in the next sections.
+TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles are described in the next sections.
 
 | Band | Center Frequency (Hz) | Frequency Range (Hz) | Q-Factor (Approx.) |
 |------|-----------------------|----------------------|--------------------|
@@ -395,7 +446,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-Updated fucntion allows controlling if EQ settings are ganged or each channel individually controlled:
+Updated function allows controlling if EQ settings are ganged or each channel is individually controlled:
 
 To get the current EQ mode:
 
@@ -572,9 +623,9 @@ This enables advanced per-channel EQ configuration for custom speaker
 
 ## Modulation modes and switching frequency
 
-Both modulation scheme and switching frequency have an impact on power consumption / switching losses versus EMI noise. 
+Modulation mode affects DAC efficiency, while somewhat compromising THD in result of higher one. Rule of thumb: while running under lower VCC (12V or less), effciency benefit may not be that big, to compromise THD. On higher VCC, loewr efficiency affects DAC stability, it cannot sustain full power without some king of active cooling (heatsink, fan or both), so it makes more sense to pick more efficient power mode as default
 
-#### BD Modulation
+### BD Modulation
 
 > This is a modulation scheme that allows operation without the classic LC reconstruction filter when the amp is
 driving an inductive load with short speaker wires. Each output is switching from 0 volts to the supply voltage.
@@ -584,7 +635,7 @@ The duty cycle of OUTPx is less than 50%, and OUTNx is greater than 50% for nega
 voltage across the load sits at 0 V throughout most of the switching period, reducing the switching current, which
 reduces any I2R losses in the load.
 
-#### 1SPW Modulation
+### 1SPW Modulation
 
 > The 1SPW mode alters the normal modulation scheme in order to achieve higher efficiency with a slight penalty
 in THD degradation and more attention required in the output filter selection. In Low Idle Current mode, the
@@ -593,7 +644,7 @@ decrease and one will increase. The decreasing output signal will quickly rail t
 modulation takes place through the rising output. The result is that only one output is switching during a majority
 of the audio cycle. Efficiency is improved in this mode due to the reduction of switching losses.
 
-#### Hybrid Modulation
+### Hybrid Modulation
 
 > Hybrid Modulation is designed to minimize power loss without compromising the THD+N performance, and is
 optimized for battery-powered applications. With Hybrid modulation enabled, the device detects the input signal level
@@ -602,7 +653,7 @@ maintains the same audio performance level as the BD Modulation. In order to min
 low switching frequency (For example, Fsw = 384 kHz) with a proper LC filter (15 µH + 0.68 µF or 22 µH + 0.68
 µF) is recommended
 
-#### Driver Switching frequency
+### Driver Switching frequency
 
 TAS5805M supports different switching frequencies, which mostly affect the balance between output filter losses and EMI noise. Below is the recommendation from TI
 
@@ -613,6 +664,37 @@ TAS5805M supports different switching frequencies, which mostly affect the balan
 - With an inductor as the output filter, DAC can achieve ultra-low idle current (with Hybrid Modulation or 1SPW Modulation) and keep a large EMI margin. The switching frequency of TAS5805M can be adjusted from 384 kHz to 768 kHz. Higher switching frequency means a smaller Inductor value needed
   - With 768 kHz switching frequency. Designers can select 10uH + 0.68 µF or 4.7 µH +0.68 µF as the output filter, which will help customers to save the Inductor size with the same rated current during the inductor selection. With 4.7uH + 0.68uF, make sure PVDD ≤ 12V to avoid the large ripple current to trigger the OC threshold (5A)
   - With 384 kHz switching frequency. Designers can select 22 µH + 0.68 µF or 15 µH + 0.68 µF or 10 µH + 0.68 µF as the output filter, this will help customers to save power dissipation for some battery power supply applications. With 10 µH + 0.68 µF, make sure PVDD ≤ 12 V to avoid the large ripple current from triggering the OC threshold (5 A).
+
+### Power consumption testing
+
+Based on my testing performed on the Louder-ESP32 board, switching frequency and DB-frequency have very little impact on the power consumption and rather affect EMI of the DAC. 
+
+| Efficiency (BD-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (1SPW-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (HYBRID-mode, VCC=5V) | FS freq,kHz |  |  |  |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| BD freq, kHz | 768k | 576k | 480k | 384k | BD freq, kHz | 768k | 576k | 480k | 384k | BD freq, kHz | 768k | 576k | 480k | 384k |
+| 80 | 70% | 70% | 71% | 71% | 80 | 71% | 72% | 72% | 72% | 80 | 70% | 69% | 70% | 71% |
+| 100 | 70% | 71% | 71% | 71% | 100 | 72% | 72% | 73% | 72% | 100 | 69% | 70% | 71% | 71% |
+| 120 | 70% | 71% | 71% | 71% | 120 | 72% | 72% | 73% | 72% | 120 | 69% | 70% | 71% | 71% |
+| 175 | 70% | 71% | 71% | 71% | 175 | 71% | 72% | 72% | n/a | 175 | 70% | 70% | 71% | 71% |
+
+On the other hand, the modulation mode has a considerable effect on the power consumption/losses, and that difference is higher for higher VCC.
+Measured as a 100 Hz sin tone, the amplitude for each VCC was adjusted to not cross the power rails (otherwise higher voltage would not use the power stage fully).
+
+| DAC mode (Sin tone / 100 Hz): Modulation mode / SW freq / BD freq | 5V |  | 9V |  | 12V |  | 15V |  | 20V |  | 26V |  |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|  | Pwr, W | Eff, % | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A | Pwr, W | Cur, A |
+| Speaker power, W ->  |  | 1.621 |  | 6.472 |  | 6.472 |  | 6.472 |  | 25.705 |  | 25.705 |
+| BD/768k/80k | 2.330 | 70% | 8.200 | 79% | 8.256 | 78% | 8.535 | 76% | 33.400 | 77% | 38.000 | 68% |
+| 1SPW/768k/80k | 2.28 | 71% | 7.99 | 81% | 8.05 | 80% | 8.31 | 78% | 31.7 | 81% | 32.8 | 78% |
+| HYBRID/768k/80k | 2.330 | 70% | 8.16 | 79% | 8.34 | 78% | 8.59 | 75% | 33.8 | 76% | 37.7 | 68% |
+
+<img width="740" height="500" alt="image" src="https://github.com/user-attachments/assets/3cc11a98-097c-4269-adf7-c8ce806bf779" />
+
+**Conclusion:** 1SPW is recommended for higher power efficiency, especially for VCC above 15V. For voltages below 12V, the benefit is not that big; BD-mode is recommended for lower THD values. 
+
+Note: a small difference between DB and HYBRID mode might be caused by the fact that switching to HYBRID requires a special routine, so I might fail to do that during testing. Hard to say
+
+<img width="810" height="249" alt="image" src="https://github.com/user-attachments/assets/4152c34b-1289-49ce-a0ce-309f37b43c99" />
 
 ### Setting and Getting Modulation Mode
 
