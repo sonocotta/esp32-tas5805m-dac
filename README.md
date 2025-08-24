@@ -282,6 +282,10 @@ I did some testing to analyze power consumption in different power modes under d
 
 Additional tests were performed to analyze the thermal stability of the Louder-ESP32 board under high load. These tests output a 100Hz sin-wave with a close to rail-to-rail signal (adjutsing volume and gain) into an 8-Ohm load (both BD and 1SPW modulation). I started testing with bare naked DAC, as soon as I reached the point where DAC was entering thermal shutdown, I added a small radiator on top, and once more, a larger radiator on the back side (where the thermal pad is connected to the ground plane)
 
+<img width="739" height="369" alt="image" src="https://github.com/user-attachments/assets/0408f584-9626-4400-984a-abee3c63c6ce" />
+<img width="739" height="369" alt="image" src="https://github.com/user-attachments/assets/1f1b252e-396d-44d0-a9dd-9714f4a644d6" />
+
+
 | SIN wave, 100 Hz |                 |       | BD-mode               |                   |               |           |                      |                               |                              | 1-SPW mode      |                       |                   |               |           |                      |                               |                              |
 |------------------|-----------------|-------|-----------------------|-------------------|---------------|-----------|----------------------|-------------------------------|------------------------------|-----------------|-----------------------|-------------------|---------------|-----------|----------------------|-------------------------------|------------------------------|
 | VCC, V           | Speaker voltage | Ratio | Speakers power RMS, W | Consumed power, W | Efficiency, % | Losses, W | Naked chip, 1min run | Heat Sink 10x15mm (top cover) | Heat sink 32x32mm(back side) | Speaker voltage | Speakers power RMS, W | Consumed power, W | Efficiency, % | Losses, W | Naked chip, 1min run | Heat Sink 10x15mm (top cover) | Heat sink 32x32mm(back side) |
