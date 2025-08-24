@@ -204,7 +204,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-The second way to change the volume is to use DAC native scale, which is [0..255] where 0 is +24 dB gain (that's loud!), and 255 is mute. To set the volume this way, use the `tas5805m_set_volume` function (volume is in the range [TAS5805M_VOLUME_MIN..TAS5805M_VOLUME_MAX], default is `TAS5805M_VOLUME_DEFAULT = 48`, which is +0 Db):
+The second way to change the volume is to use the DAC native scale, which is [0..255] where 0 is +24 dB gain (that's loud!), and 255 is mute. To set the volume this way, use the `tas5805m_set_volume` function (volume is in the range [TAS5805M_VOLUME_MIN..TAS5805M_VOLUME_MAX], default is `TAS5805M_VOLUME_DEFAULT = 48`, which is +0 Db):
 
 ```cpp
 uint8_t volume = 80; // Volume level (0-255)
@@ -276,9 +276,9 @@ I did some testing to analyze power consumption in different power modes under d
 | SLEEP                  | 0.24   | 0.048  | 0.26   | 0.028  | 0.28   | 0.024  | 0.33   | 0.02   | 0.4    | 0.019  | 0.49   | 0.019  |
 | DEEPSLEEP              | 0.21   | 0.042  | 0.2    | 0.02   | 0.2    | 0.018  | 0.21   | 0.014  | 0.24   | 0.014  | 0.31   | 0.012  |
 
-<insert chart>
+<img width="740" height="485" alt="image" src="https://github.com/user-attachments/assets/f305df10-74d2-4e9c-8691-637d3848895e" />
 
-**Conclusion:** MUTE mode and DEEP-SLEEP are the most efficient ones. In the practical application MUTE and PLAY modes are enough to cover normal and idling modes.
+**Conclusion:** MUTE mode and DEEP-SLEEP are the most efficient ones. In the practical application, MUTE and PLAY modes are enough to cover normal and idling modes.
 
 ### Setting and Getting Power State
 
@@ -332,7 +332,7 @@ if (ret != ESP_OK) {
 
 ### Setting and Getting DAC Mode
 
-TAS5805M has a bridge mode of operation, that causes both output drivers to synchronize and push out the same audio with double the power.  In that case single speaker is expected to be connected across channels, so remember to reconnect speakers if you're changing to bridge mode. 
+TAS5805M has a bridge mode of operation, which causes both output drivers to synchronize and push out the same audio with double the power.  In that case single speaker is expected to be connected across channels, so remember to reconnect speakers if you're changing to bridge mode. 
 
 |   | BTL (default, STEREO) | PBTL (MONO, rougly double power) |
 |---|-----------------------|---------------------------|
@@ -366,7 +366,7 @@ if (ret != ESP_OK) {
 
 ## EQ controls
 
-TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles described in the next sections.
+TAS5805M DAC has a powerful 15-channel EQ that allows defining each channel's transfer function using BQ coefficients. In a practical sense, it allows us to draw pretty much any curve in a frequency response. I decided to split the audio range into 15 sections, defining for each a -15..+15 dB adjustment range and appropriate bandwidth to cause mild overlap. This allows both to keep the curve flat enough to not cause distortions even in extreme settings, but also allows a wide range of transfer characteristics. This EQ setup is a common approach for full-range speakers; the subwoofer/satellite profiles are described in the next sections.
 
 | Band | Center Frequency (Hz) | Frequency Range (Hz) | Q-Factor (Approx.) |
 |------|-----------------------|----------------------|--------------------|
@@ -420,7 +420,7 @@ if (ret != ESP_OK) {
 }
 ```
 
-Updated fucntion allows controlling if EQ settings are ganged or each channel individually controlled:
+Updated function allows controlling if EQ settings are ganged or each channel is individually controlled:
 
 To get the current EQ mode:
 
@@ -641,7 +641,7 @@ TAS5805M supports different switching frequencies, which mostly affect the balan
 
 ### Power consumption testing
 
-Based on my testing, switching frequency and DB-frequency have very little impact on the power consumption and rather affect EMI of the DAC. 
+Based on my testing performed on the Louder-ESP32 board, switching frequency and DB-frequency have very little impact on the power consumption and rather affect EMI of the DAC. 
 
 | Efficiency (BD-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (1SPW-mode, VCC=5V) | FS freq,kHz |  |  |  | Efficiency (HYBRID-mode, VCC=5V) | FS freq,kHz |  |  |  |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -651,8 +651,8 @@ Based on my testing, switching frequency and DB-frequency have very little impac
 | 120 | 70% | 71% | 71% | 71% | 120 | 72% | 72% | 73% | 72% | 120 | 69% | 70% | 71% | 71% |
 | 175 | 70% | 71% | 71% | 71% | 175 | 71% | 72% | 72% | n/a | 175 | 70% | 70% | 71% | 71% |
 
-On the other hand, modulation mode has considerable affect on the power consumption/losses and that difference is higher for higher VCC.
-Measured as 100 Hz sin tone, amplitude for each VCC was adjusted to not cross the power rails (otherwise higher voltage would not use power stage fully).
+On the other hand, the modulation mode has a considerable effect on the power consumption/losses, and that difference is higher for higher VCC.
+Measured as a 100 Hz sin tone, the amplitude for each VCC was adjusted to not cross the power rails (otherwise higher voltage would not use the power stage fully).
 
 | DAC mode (Sin tone / 100 Hz): Modulation mode / SW freq / BD freq | 5V |  | 9V |  | 12V |  | 15V |  | 20V |  | 26V |  |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -662,9 +662,13 @@ Measured as 100 Hz sin tone, amplitude for each VCC was adjusted to not cross th
 | 1SPW/768k/80k | 2.28 | 71% | 7.99 | 81% | 8.05 | 80% | 8.31 | 78% | 31.7 | 81% | 32.8 | 78% |
 | HYBRID/768k/80k | 2.330 | 70% | 8.16 | 79% | 8.34 | 78% | 8.59 | 75% | 33.8 | 76% | 37.7 | 68% |
 
-<insert chart>
+<img width="740" height="500" alt="image" src="https://github.com/user-attachments/assets/3cc11a98-097c-4269-adf7-c8ce806bf779" />
 
-Conclusion: 1SPW is recommended for higher power efficiency, especially for VCC above 15V. For voltages below 12V the benefit is not that bid, for BD-mode is recommended for lower THD values. 
+**Conclusion:** 1SPW is recommended for higher power efficiency, especially for VCC above 15V. For voltages below 12V, the benefit is not that big; BD-mode is recommended for lower THD values. 
+
+Note: a small difference between DB and HYBRID mode might be caused by the fact that switching to HYBRID requires a special routine, so I might fail to do that during testing. Hard to say
+
+<img width="810" height="249" alt="image" src="https://github.com/user-attachments/assets/4152c34b-1289-49ce-a0ce-309f37b43c99" />
 
 ### Setting and Getting Modulation Mode
 
