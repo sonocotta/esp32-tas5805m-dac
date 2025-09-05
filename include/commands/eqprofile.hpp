@@ -40,10 +40,21 @@ private:
             "HF_150HZ"
         };
 
+        struct
+        {
+            struct arg_str *channel;
+            struct arg_int *profile;
+            struct arg_end *end;
+        } eq_args;
+
+        eq_args.channel = arg_str0(NULL, NULL, "<channel>", "Channel: l=left, r=right");
+        eq_args.profile = arg_int0(NULL, NULL, "<profile>", "EQ profile: 0=FLAT, 1=LF_60HZ, 2=LF_70HZ, 3=LF_80HZ, 4=LF_90HZ, 5=LF_100HZ, 6=LF_110HZ, 7=LF_120HZ, 8=LF_130HZ, 9=LF_140HZ, 10=LF_150HZ, 11=HF_60HZ, 12=HF_70HZ, 13=HF_80HZ, 14=HF_90HZ, 15=HF_100HZ, 16=HF_110HZ, 17=HF_120HZ, 18=HF_130HZ, 19=HF_140HZ, 20=HF_150HZ");      
+        eq_args.end = arg_end(1);   
+
         int nerrors = arg_parse(argc, argv, (void **)&eq_args);
         if (nerrors != 0)
         {
-            ESP_LOGE(TAG, "Error parsing arguments");
+            arg_print_errors(stderr, eq_args.end, argv[0]);
             return 1;
         }
 

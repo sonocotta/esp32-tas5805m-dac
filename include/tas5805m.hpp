@@ -195,6 +195,16 @@ public:
         return tas5805m_set_mixer_gain(channel, gain_9_23);
     };
 
+    esp_err_t getClipperGain(int32_t *gain_db10, int32_t *makeup_left_db10, int32_t *makeup_right_db10)
+    {
+        return tas5805m_get_clipper_gain(gain_db10, makeup_left_db10, makeup_right_db10);
+    };
+
+    esp_err_t setClipperGain(int32_t gain_db10, int32_t makeup_left_db10, int32_t makeup_right_db10)
+    {
+        return tas5805m_set_clipper_gain(gain_db10, makeup_left_db10, makeup_right_db10);
+    };
+
     esp_err_t getFsFreq(TAS5805M_FS_FREQ *freq)
     {
         return tas5805m_get_fs_freq(freq);

@@ -8,6 +8,7 @@
 #include "driver/i2c.h"
 #include "tas5805m.h"
 #include "tas5805m_cfg.h"
+#include "tas5805m-math.h"
 #include "../eq/tas5805m_eq.h"
 #include "../eq/tas5805m_eq_profiles.h"
 
@@ -107,38 +108,15 @@ esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
   return ret;
 }
 
-// TODO: create read_bytes function
-// Not validated!!!!!
-// esp_err_t tas5805m_read_bytes(uint8_t *reg,
-//                                int regLen, uint8_t *data, int datalen)
-// {
-//   int ret = ESP_OK;
-//   ESP_LOGV(TAG, "%s: 0x%02x <- [%d] bytes", __func__, *reg, datalen);
-//   for (int i = 0; i < datalen; i++)
-//   {
-//     ESP_LOGV(TAG, "%s: 0x%02x", __func__, data[i]);
-//   }
-
-//   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-//   ret |= i2c_master_start(cmd);
-//   ret |= i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-//   ret |= i2c_master_write(cmd, reg, regLen, ACK_CHECK_EN);
-//   ret |= i2c_master_start(cmd); // Restart for reading
-//   ret |= i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | READ_BIT, ACK_CHECK_EN);
-//   ret |= i2c_master_read(cmd, data, datalen, NACK_VAL);
-//   ret |= i2c_master_stop(cmd);
-//   ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
-
-//   // Check if ret is OK
-//   if (ret != ESP_OK)
-//   {
-//     ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
-//   }
-
-//   i2c_cmd_link_delete(cmd);
-
-//   return ret;
-// }
+// TODO: replace with burst read instead of sequential reads
+esp_err_t tas5805m_read_bytes(uint8_t reg, uint8_t *data, int datalen)
+{
+  int ret = ESP_OK;
+  for (int i = 0; i < datalen; i++) {
+    ret = ret | tas5805m_read_byte(reg + i, &data[i]);
+  }
+  return ret;
+}
 
 // Writing of TAS5805M-Register
 esp_err_t tas5805m_write_byte(uint8_t register_name, uint8_t value)
@@ -840,6 +818,92 @@ esp_err_t tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNELS channel, uint32_t gain
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_LEFT_TO_LEFT_GAIN, ret);
   }
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
+  return ret;
+}
+
+esp_err_t tas5805m_get_clipper_gain(int32_t *gain_db10, int32_t *makeup_left_db10, int32_t *makeup_right_db10)
+{
+  uint32_t reg_value0, reg_value1, reg_value2;
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_CLIPPER_PAGE);
+  int ret = tas5805m_read_bytes(TAS5805M_REG_CLIPPER_GAIN, (uint8_t *)&reg_value0, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to read register %d: %d", TAS5805M_REG_CLIPPER_GAIN, ret);
+  }
+
+  ret = ret | tas5805m_read_bytes(TAS5805M_REG_CLIPPER_LEFT_MAKEUP, (uint8_t *)&reg_value1, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to read register %d: %d", TAS5805M_REG_CLIPPER_LEFT_MAKEUP, ret);
+  }
+
+  ret = ret | tas5805m_read_bytes(TAS5805M_REG_CLIPPER_RIGHT_MAKEUP, (uint8_t *)&reg_value2, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to read register %d: %d", TAS5805M_REG_CLIPPER_RIGHT_MAKEUP, ret);
+  }
+
+  ESP_LOGD(TAG, "%s: Clipper gain reg=0x%08X, left makeup reg=0x%08X, right makeup reg=0x%08X", __func__, 
+    reg_value0, reg_value1, reg_value2);
+
+  if (ret == ESP_OK) {
+    if (reg_value0 == TAS5805M_CLIPPER_GAIN_DEFAULT && 
+        reg_value1 == TAS5805M_CLIPPER_MAKEUP_DEFAULT && 
+        reg_value2 == TAS5805M_CLIPPER_MAKEUP_DEFAULT) {
+      ESP_LOGD(TAG, "%s: Clipper gain and makeup are at default values, which means the clipper is disabled.", __func__);
+      ESP_LOGD(TAG, "To enable the clipper, set a clipper gain (e.g. 30 deci-dB) and corresponding makeup gain (30 deci-dB or less).");
+          *gain_db10 = 0;
+          *makeup_left_db10 = 0;
+          *makeup_right_db10 = 0;
+    } else {
+      // The actual clipper gain is offset by -24dB, makeup gain is offset by clipper gain
+      // So to get the actual clipper gain, we need to subtract 24dB
+      // To get the actual makeup gain, we need to add clipper gain
+        int16_t clipper_gain_db10 = tas5805m_float_to_db10(tas5805m_q9_23_to_float(reg_value0));
+        *gain_db10 = 240 - clipper_gain_db10;
+        *makeup_left_db10 = tas5805m_float_to_db10(tas5805m_q2_30_to_float(reg_value1)) + clipper_gain_db10;
+        *makeup_right_db10 = tas5805m_float_to_db10(tas5805m_q2_30_to_float(reg_value2)) + clipper_gain_db10;
+    }
+  }
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
+  return ret;
+}
+
+esp_err_t tas5805m_set_clipper_gain(int32_t gain_db10, int32_t makeup_left_db10, int32_t makeup_right_db10)
+{
+  ESP_LOGD(TAG, "%s: Setting clipper gain to %d deci-dB, left makeup to %d deci-dB, right makeup to %d deci-dB", __func__, 
+    gain_db10, makeup_left_db10, makeup_right_db10);
+  // When we set clipper gain coefficient, it will be based on 24dB prescaler value. Makeup gain will be based on -24dB post-scale accordingly.
+  // For example, default 0dB clipper gain will be set as 15.84893 in Q9.23 format (0x07eca9cd), left and right makeup gain will be set as 0.0630957 in Q2.30 format (0x0409c2b1).
+  // Clipper gain operates on negative values internally, so we will invert them first
+  uint32_t reg_value0 = tas5805m_float_to_q9_23(tas5805m_db10_to_float(gain_db10 + 240));
+  uint32_t reg_value1 = tas5805m_float_to_q2_30(tas5805m_db10_to_float(makeup_left_db10 - (gain_db10 + 240)));
+  uint32_t reg_value2 = tas5805m_float_to_q2_30(tas5805m_db10_to_float(makeup_right_db10 - (gain_db10 + 240)));
+  ESP_LOGD(TAG, "%s: Clipper gain=%d, reg=0x%08X", __func__, -gain_db10, reg_value0);
+  ESP_LOGD(TAG, "%s: Left makeup=%d, reg=0x%08X", __func__, makeup_left_db10, reg_value1);
+  ESP_LOGD(TAG, "%s: Right makeup=%d, reg=0x%08X", __func__, makeup_right_db10, reg_value2);
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_CLIPPER_PAGE);
+  
+
+  int ret = ESP_OK;
+  uint8_t address = TAS5805M_REG_CLIPPER_GAIN;
+  ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&reg_value0, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_CLIPPER_GAIN, ret);
+  } 
+
+  address = TAS5805M_REG_CLIPPER_LEFT_MAKEUP;
+  ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&reg_value1, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_CLIPPER_LEFT_MAKEUP, ret);
+  }
+
+  address = TAS5805M_REG_CLIPPER_RIGHT_MAKEUP;
+  ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&reg_value2, sizeof(uint32_t));
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to write register %d: %d", TAS5805M_REG_CLIPPER_RIGHT_MAKEUP, ret);
+  } 
 
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
   return ret;
