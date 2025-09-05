@@ -33,7 +33,7 @@ private:
                 TAS5805M_MIXER_CHANNELS mixer_channel = static_cast<TAS5805M_MIXER_CHANNELS>(channel);
                 Tas5805m.getMixerGainRaw(mixer_channel, &gain_9_23);
                 ESP_LOGI(TAG, "Mixer gain for channel %d is 0x%08x, which is decimal %.2f", 
-                    channel, gain_9_23, tas5805m_q9_23_to_double(gain_9_23));
+                    channel, gain_9_23, tas5805m_q9_23_to_float(gain_9_23));
             }
             return 0;
         }
@@ -58,14 +58,14 @@ private:
             uint32_t gain_9_23;
             Tas5805m.getMixerGainRaw(channel, &gain_9_23);
             ESP_LOGI(TAG, "Mixer gain for channel %s is 0x%x, which is decimal %.2f", 
-                mixer_args.channel->sval[0], gain_9_23, tas5805m_q9_23_to_double(gain_9_23));
+                mixer_args.channel->sval[0], gain_9_23, tas5805m_q9_23_to_float(gain_9_23));
             return 0;
         }
 
-        double gain = mixer_args.gain->dval[0];
+        float gain = mixer_args.gain->dval[0];
 
         ESP_LOGI(TAG, "Setting mixer gain for channel %s to %.2f (0x%08x)", 
-            mixer_args.channel->sval[0], gain, tas5805m_double_to_q9_23(gain));
+            mixer_args.channel->sval[0], gain, tas5805m_float_to_q9_23(gain));
         esp_err_t err = Tas5805m.setMixerGain(channel, gain);
         if (err != ESP_OK)
         {

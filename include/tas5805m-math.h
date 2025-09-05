@@ -18,68 +18,52 @@ extern "C" {
 uint32_t tas5805m_swap_endian_32(uint32_t val);
 
 /**
- * @brief Convert decibels (dB) to a linear gain (double).
+ * @brief Convert decibels (dB) to a linear gain (float).
  *
  * @param db Value in decibels (dB).
- * @return Linear gain as a double.
+ * @return Linear gain as a float.
  */
-double tas5805m_db_to_double(double db);
+float tas5805m_db_to_float(float db);
 
 /**
- * @brief Convert a linear gain (double) to decibels (dB).
+ * @brief Convert a linear gain (float) to decibels (dB).
  *
- * @param linear Linear gain as a double.
+ * @param linear Linear gain as a float.
  * @return Value in decibels (dB).
  */
-double tas5805m_double_to_db(double linear);
+float tas5805m_float_to_db(float linear);
 
 /**
- * @brief Convert a Q9.23 fixed-point value to a double.
+ * @brief Convert a Q9.23 fixed-point value to a float.
  *
  * @param raw Q9.23 value as a 32-bit unsigned integer.
- * @return Double-precision floating point representation.
+ * @return float-precision floating point representation.
  */
-double tas5805m_q9_23_to_double(uint32_t raw);
+float tas5805m_q9_23_to_float(uint32_t raw);
 
 /**
- * @brief Convert a double to a Q9.23 fixed-point value.
+ * @brief Convert a float to a Q9.23 fixed-point value.
  *
- * @param value Double-precision floating point input.
+ * @param value float-precision floating point input.
  * @return Q9.23 fixed-point value as a 32-bit unsigned integer.
  */
-uint32_t tas5805m_double_to_q9_23(double value);
+uint32_t tas5805m_float_to_q9_23(float value);
 
 /**
- * @brief Convert a Q9.23 fixed-point value to decibels (dB).
- *
- * @param raw Q9.23 value as a 32-bit unsigned integer.
- * @return Value in decibels (dB).
- */
-double tas5805m_q9_23_to_db(uint32_t raw);
-
-/**
- * @brief Convert a Q2.30 fixed-point value to a double.
+ * @brief Convert a Q2.30 fixed-point value to a float.
  *
  * @param raw Q2.30 value as a 32-bit unsigned integer.
- * @return Double-precision floating point representation.
+ * @return float-precision floating point representation.
  */
-double tas5805m_q2_30_to_double(uint32_t raw);
+float tas5805m_q2_30_to_float(uint32_t raw);
 
 /**
- * @brief Convert a double to a Q2.30 fixed-point value.
+ * @brief Convert a float to a Q2.30 fixed-point value.
  *
- * @param value Double-precision floating point input.
+ * @param value float-precision floating point input.
  * @return Q2.30 fixed-point value as a 32-bit unsigned integer.
  */
-uint32_t tas5805m_double_to_q2_30(double value);
-
-/**
- * @brief Convert a Q2.30 fixed-point value to decibels (dB).
- *
- * @param raw Q2.30 value as a 32-bit unsigned integer.
- * @return Value in decibels (dB).
- */
-double tas5805m_q2_30_to_db(uint32_t raw);
+uint32_t tas5805m_float_to_q2_30(float value);
 
 #ifdef __cplusplus
 }

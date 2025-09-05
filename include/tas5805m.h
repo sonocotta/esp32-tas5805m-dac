@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #define I2C_MASTER_NUM I2C_NUM_0               /*!< I2C port number for master dev */
 #define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
@@ -555,24 +555,26 @@ extern "C"
     /**
      * @brief Get the clipper gain of the TAS5805M (dB value)
      *
-     * @param gain_db: Pointer to the gain variable, typically negative value
-     * @param makeup_left_db: Pointer to the makeup variable, typically positive value that less or equal than abs(gain)
-     * @param makeup_right_db: Pointer to the makeup variable, typically positive value that less or equal than abs(gain)
-     *
+     * @param gain_db10: Pointer to the gain cap variable, value that will be soft-clipped, positive. Measured in deci-dB (db10) to keep integer math
+     * @param makeup_left_db10: Pointer to the makeup variable, typically positive value that less or equal than (gain)
+     * @param makeup_right_db10: Pointer to the makeup variable, typically positive value that less or equal than (gain)
+     * 
+     * db10 value is a tenth of a dB, i.e. 3dB = 30 db10 (to keep integer math)
      */
-    esp_err_t tas5805m_get_clipper_gain(double *gain_db, double *makeup_left_db, double *makeup_right_db);
+    esp_err_t tas5805m_get_clipper_gain(int32_t *gain_db10, int32_t *makeup_left_db10, int32_t *makeup_right_db10);
     
     /**
      * @brief Set the clipper gain of the TAS5805M (dB value)
      *
-     * @param gain_db: The gain to set, typically negative value
-     * @param makeup_left_db: The makeup to set, typically positive value that less or equal than abs(gain)
-     * @param makeup_right_db: The makeup to set, typically positive value that less or equal than abs(gain)
+     * @param gain_db10: The gain cap that will be soft-clipped, positive value. 
+     * @param makeup_left_db10: The makeup to set, typically positive value that less or equal than gain. 
+     * @param makeup_right_db10: The makeup to set, typically positive value that less or equal than gain. 
      * 
-     * Example: gain = -3dB, effectively smooth out upper 3Db of the signal and thus reducing overall gain by 3Db
+     * db10 value is a tenth of a dB, i.e. 3dB = 30 db10 (to keep integer math)
+     * Example: gain = 3dB, effectively smooth out upper 3Db of the signal and thus reducing overall gain by 3Db
      * makeup = 3dB, effectively restoring overall clipper gain to 0Db
      */ 
-    esp_err_t tas5805m_set_clipper_gain(double gain_db, double makeup_left_db, double makeup_right_db);
+    esp_err_t tas5805m_set_clipper_gain(int32_t gain_db10, int32_t makeup_left_db10, int32_t makeup_right_db10);
 
     /**
      * @brief Get the sample rate of the TAS5805M

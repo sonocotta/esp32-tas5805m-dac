@@ -173,14 +173,14 @@ public:
         return tas5805m_get_mixer_gain(channel, gain);
     };
 
-    esp_err_t getMixerGain(TAS5805M_MIXER_CHANNELS channel, double *gain)
+    esp_err_t getMixerGain(TAS5805M_MIXER_CHANNELS channel, float *gain)
     {
         uint32_t gain_9_23;
         esp_err_t ret = tas5805m_get_mixer_gain(channel, &gain_9_23);
         if (ret != ESP_OK) {
             return ret;
         }
-        *gain = tas5805m_q9_23_to_double(gain_9_23);
+        *gain = tas5805m_q9_23_to_float(gain_9_23);
         return ESP_OK;
     };
 
@@ -189,20 +189,20 @@ public:
         return tas5805m_set_mixer_gain(channel, gain);
     };
 
-    esp_err_t setMixerGain(TAS5805M_MIXER_CHANNELS channel, double gain)
+    esp_err_t setMixerGain(TAS5805M_MIXER_CHANNELS channel, float gain)
     {
-        uint32_t gain_9_23 = tas5805m_double_to_q9_23(gain);
+        uint32_t gain_9_23 = tas5805m_float_to_q9_23(gain);
         return tas5805m_set_mixer_gain(channel, gain_9_23);
     };
 
-    esp_err_t getClipperGain(double *gain, double *makeup_left, double *makeup_right)
+    esp_err_t getClipperGain(int32_t *gain_db10, int32_t *makeup_left_db10, int32_t *makeup_right_db10)
     {
-        return tas5805m_get_clipper_gain(gain, makeup_left, makeup_right);
+        return tas5805m_get_clipper_gain(gain_db10, makeup_left_db10, makeup_right_db10);
     };
 
-    esp_err_t setClipperGain(double gain, double makeup_left, double makeup_right)
+    esp_err_t setClipperGain(int32_t gain_db10, int32_t makeup_left_db10, int32_t makeup_right_db10)
     {
-        return tas5805m_set_clipper_gain(gain, makeup_left, makeup_right);
+        return tas5805m_set_clipper_gain(gain_db10, makeup_left_db10, makeup_right_db10);
     };
 
     esp_err_t getFsFreq(TAS5805M_FS_FREQ *freq)

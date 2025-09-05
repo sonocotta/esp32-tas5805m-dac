@@ -14,6 +14,7 @@ This library provides an interface for controlling the TAS5805M digital-to-analo
   - Set and get modulation mode
   - Set and get analog gain
   - Set and get mixer mode
+  - Set and get clipper gain (for DRC/AGL testing)
 - Read DAC state
   - Get sample rate and BCK ratio
   - Get power state and auto-mute state
@@ -60,6 +61,9 @@ Work in progress
   - [Manual mixer controls](#manual-mixer-controls)
     - [Get mixer gain](#get-mixer-gain)
     - [Set mixer gain](#set-mixer-gain)
+  - [Clipper Gain (Soft Clipping, DRC/AGL Testing)](#clipper-gain-soft-clipping-drcagl-testing)
+    - [Setting Clipper Gain](#setting-clipper-gain)
+    - [Getting Clipper Gain](#getting-clipper-gain)
   - [DAC state functions](#dac-state-functions)
     - [Getting Sample Rate and BCK Ratio](#getting-sample-rate-and-bck-ratio)
     - [Getting Power State and Automute State](#getting-power-state-and-automute-state)
@@ -786,6 +790,46 @@ float gain = 2; // +6Db
 uint32_t gain_9_23 = tas5805m_float_to_q9_23(gain); // Q9.23 format
 esp_err_t ret = tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNEL_LEFT_TO_LEFT, gain_9_23);
 ```
+
+## Clipper Gain (Soft Clipping, DRC/AGL Testing)
+
+**Note:** Clipper gain functionality is primarily intended for testing and evaluation. In practical applications, it is designed to be used together with Dynamic Range Compression (DRC) and Automatic Gain Limiting (AGL) features, which are not yet implemented in this library.
+
+The clipper allows you to set a soft clipping threshold and makeup gain for left and right channels. This can be useful for evaluating the effect of limiting the output signal and compensating for the reduced gain.
+
+### Setting Clipper Gain
+
+To set the clipper gain and makeup gain (in deci-dB, where 10 = 1.0 dB):
+
+```cpp
+int32_t clipper_gain_db10 = 30;        // Soft clip threshold, e.g. 3.0 dB
+int32_t makeup_left_db10 = 20;         // Makeup gain for left channel, e.g. 2.0 dB
+int32_t makeup_right_db10 = 20;        // Makeup gain for right channel, e.g. 2.0 dB
+
+esp_err_t ret = tas5805m_set_clipper_gain(clipper_gain_db10, makeup_left_db10, makeup_right_db10);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to set clipper gain");
+}
+```
+
+### Getting Clipper Gain
+
+To read the current clipper and makeup gain settings:
+
+```cpp
+int32_t clipper_gain_db10, makeup_left_db10, makeup_right_db10;
+esp_err_t ret = tas5805m_get_clipper_gain(&clipper_gain_db10, &makeup_left_db10, &makeup_right_db10);
+if (ret != ESP_OK) {
+    ESP_LOGE("TAS5805M", "Failed to get clipper gain");
+} else {
+    ESP_LOGI("TAS5805M", "Clipper gain: %d deci-dB, Makeup L: %d deci-dB, Makeup R: %d deci-dB",
+        clipper_gain_db10, makeup_left_db10, makeup_right_db10);
+}
+```
+
+**Note:**  
+- The clipper is not intended for production use at this stage. It is provided for evaluation and development of DRC/AGL features.
+- For most users, this feature can be ignored unless you are specifically testing soft clipping or advanced limiter behavior.
 
 ## DAC state functions
 

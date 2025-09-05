@@ -15,7 +15,9 @@ extern "C"
 #define ACK_VAL I2C_MASTER_ACK     /*!< I2C ack value */
 #define NACK_VAL I2C_MASTER_NACK   /*!< I2C nack value */
 
+#ifndef TAS5805M_ADDRESS
 #define TAS5805M_ADDRESS 0x2D      /*!< 7-bit address with a 15k pull up resistor */
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C3
 #define GPIO_NUM_UNSET 63

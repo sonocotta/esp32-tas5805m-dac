@@ -16,16 +16,16 @@ private:
     static int clipper_command_handler(int argc, char **argv)
     {
         struct {
-            struct arg_dbl *gain;
-            struct arg_dbl *makeup_left;
-            struct arg_dbl *makeup_right;
+            struct arg_int *gain;
+            struct arg_int *makeup_left;
+            struct arg_int *makeup_right;
             struct arg_end *end;
         } clipper_args;
 
-        clipper_args.gain = arg_dbl0(NULL, NULL, "<gain>", "Clipper gain in dB (negative value)");
-        clipper_args.makeup_left = arg_dbl0(NULL, NULL, "<makeup_left>", "Left channel makeup gain in dB (positive value)");
-        clipper_args.makeup_right = arg_dbl0(NULL, NULL, "<makeup_right>", "Right channel makeup gain in dB (positive value)");
-        clipper_args.end = arg_end(1);  
+        clipper_args.gain = arg_int0(NULL, NULL, "[gain]", "Clipper gain in deci-dB, typically negative, e.g. -30 for -3.0dB");
+        clipper_args.makeup_left = arg_int0(NULL, NULL, "[makeup_left]", "Left channel makeup gain in dB, typically positive, e.g. 30 for 3.0dB");        
+        clipper_args.makeup_right =  arg_int0(NULL, NULL, "[makeup_right]", "Right channel makeup gain in dB, typically positive, e.g. 30 for 3.0dB"),
+        clipper_args.end = arg_end(3);  
 
         int nerrors = arg_parse(argc, argv, (void **)&clipper_args);
         if (nerrors != 0)
@@ -38,13 +38,11 @@ private:
                 clipper_args.makeup_left->count == 0 &&
                 clipper_args.makeup_right->count == 0)
         {
-            double gain, makeup_left, makeup_right;
+            int32_t gain, makeup_left, makeup_right;
             Tas5805m.getClipperGain(&gain, &makeup_left, &makeup_right);
 
-            ESP_LOGI(TAG, "Clipper gain is %d dB", (int)lround(gain));
-            ESP_LOGI(TAG, "Left channel makeup gain is %d dB", (int)lround(makeup_left));
-            ESP_LOGI(TAG, "Right channel makeup gain is %d dB", (int)lround(makeup_right));
-
+            ESP_LOGI(TAG, "Current clipper gain is %d deci-dB, left makeup is %d deci-dB, right makeup is %d deci-dB", 
+                gain, makeup_left, makeup_right);
             return 0;
         }
         else
@@ -56,9 +54,9 @@ private:
                 return 1;
             }
 
-            float gain = clipper_args.gain->dval[0];
-            float makeup_left = clipper_args.makeup_left->dval[0];
-            float makeup_right = clipper_args.makeup_right->dval[0];
+            int32_t gain = clipper_args.gain->ival[0];
+            int32_t makeup_left = clipper_args.makeup_left->ival[0];
+            int32_t makeup_right = clipper_args.makeup_right->ival[0];
 
             // Set the clipper gain and makeup gains
             esp_err_t err = Tas5805m.setClipperGain(gain, makeup_left, makeup_right);
@@ -75,9 +73,9 @@ private:
 public:
     struct ClipperArgs
     {
-        struct arg_dbl *gain;
-        struct arg_dbl *makeup_left;
-        struct arg_dbl *makeup_right;
+        struct arg_int *gain;
+        struct arg_int *makeup_left;
+        struct arg_int *makeup_right;
         struct arg_end *end;
     };  
 
@@ -88,7 +86,7 @@ public:
     {
         return {
             .command = "clip",
-            .help = "Get or set the clipper gain and makeup gain",
+            .help = "Get or set the soft-clipper gain and makeup gain. Use without arguments to get current values.",
             .hint = NULL,
             .func = &clipper_command_handler,
             .argtable = &clipper_args

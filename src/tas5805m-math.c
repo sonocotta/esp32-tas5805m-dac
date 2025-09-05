@@ -4,6 +4,9 @@
 
 static const char *TAG = "MATH";
 
+#define TAG "TAS5805M"
+
+// Utility: swap endian for 32-bit values
 uint32_t tas5805m_swap_endian_32(uint32_t val)
 {
     return ((val & 0xFF) << 24) |
@@ -12,93 +15,95 @@ uint32_t tas5805m_swap_endian_32(uint32_t val)
            ((val >> 24) & 0xFF);
 }
 
-// Convert dB to linear gain (double)
-// Example: 0 dB -> 1.0, -6.0206 dB -> 0.5, +6.0206 dB -> 2.0
-double tas5805m_db_to_double(double db)
-{
-    double result = powf(10.0, db / 20.0);
-    ESP_LOGD(TAG, "%s: db=%f -> result=%f", __func__, db, result);
-    return result;  
-}
+/* -------------------------
+   Fixed-point dB helpers
+   ------------------------- */
 
-// Convert linear gain (double) to dB
-// Example: 1.0 -> 0 dB, 0.5 -> -6.0206 dB, 2.0 -> +6.0206 dB
-double tas5805m_double_to_db(double linear)
+// Convert dB (in tenths) to linear float
+// Example: 0 -> 1.0, -60 -> 0.501, +60 -> 2.0
+float tas5805m_db10_to_float(int32_t db10)
 {
-    double result = 20.0 * log10(linear);
-    ESP_LOGD(TAG, "%s: linear=%f -> result=%f", __func__, linear, result);
+    float db = (float)db10 / 10.0f;
+    float result = powf(10.0f, db / 20.0f);
+    ESP_LOGD(TAG, "%s: db10=%d (%.1f dB) -> result=%f", __func__, db10, db, result);
     return result;
 }
 
-double tas5805m_q9_23_to_double(uint32_t raw)
+// Convert linear float to dB in tenths
+int32_t tas5805m_float_to_db10(float linear)
+{
+    float db = 20.0f * log10f(linear);
+    int32_t db10 = (int32_t)lroundf(db * 10.0f);
+    ESP_LOGD(TAG, "%s: linear=%f -> db10=%d (%.1f dB)", __func__, linear, db10, (float)db10/10.0f);
+    return db10;
+}
+
+/* -------------------------
+   Q9.23 conversions
+   ------------------------- */
+
+float tas5805m_q9_23_to_float(uint32_t raw)
 {
     uint32_t val = tas5805m_swap_endian_32(raw);
     int32_t signed_val = (int32_t)val;
-    // Divide by 2^23 = 8388608
-    double result = (double)signed_val / 8388608.0;
-    ESP_LOGD(TAG, "%s: raw=0x%08X, val=0x%08X, signed_val=%d, result=%f", __func__, 
-        raw, val, signed_val, result);
+    float result = (float)signed_val / 8388608.0f; // 2^23
+    ESP_LOGD(TAG, "%s: raw=0x%08X, signed_val=%d -> result=%f",
+             __func__, raw, signed_val, result);
     return result;
 }
 
-uint32_t tas5805m_double_to_q9_23(double value)
+uint32_t tas5805m_float_to_q9_23(float value)
 {
-    if (value > 255.999999) value = 255.999999;
-    if (value < -256.0) value = -256.0;
+    if (value > 255.999999f) value = 255.999999f;
+    if (value < -256.0f)     value = -256.0f;
 
     int32_t fixed_val = (int32_t)(value * (1 << 23));
     uint32_t le_val = tas5805m_swap_endian_32((uint32_t)fixed_val);
 
-    ESP_LOGD(TAG, "%s: value=%f -> fixed_val=%08X, le_val=0x%08X", __func__, 
-        value, fixed_val, le_val);
+    ESP_LOGD(TAG, "%s: value=%f -> fixed_val=%d, le_val=0x%08X",
+             __func__, value, fixed_val, le_val);
 
     return le_val;
 }
 
-double tas5805m_q9_23_to_db(uint32_t raw) 
-{
-    // Convert raw Q9.23 value to linear doubleing-point
-    double linear = tas5805m_q9_23_to_double(raw);
-    // Avoid log of zero
-    // if (linear <= 0.0) {
-    //     return -INFINITY;  // represent as negative infinity dB
-    // }
-    // Convert to dB
-    return 20.0 * log10(linear);
-}
+// Convert raw Q9.23 register to dB in tenths
+// int32_t tas5805m_q9_23_to_db10(uint32_t raw)
+// {
+//     float linear = tas5805m_q9_23_to_float(raw);
+//     return tas5805m_float_to_db10(linear);
+// }
 
-double tas5805m_q2_30_to_double(uint32_t raw)
+/* -------------------------
+   Q2.30 conversions
+   ------------------------- */
+
+float tas5805m_q2_30_to_float(uint32_t raw)
 {
     uint32_t val = tas5805m_swap_endian_32(raw);
     int32_t signed_val = (int32_t)val;
-    double result = (double)signed_val / (double)(1 << 30);
-    ESP_LOGD(TAG, "%s: raw=0x%08X, val=0x%08X, signed_val=%d, result=%f", __func__, 
-        raw, val, signed_val, result);
+    float result = (float)signed_val / 1073741824.0f; // 2^30
+    ESP_LOGD(TAG, "%s: raw=0x%08X, signed_val=%d -> result=%f",
+             __func__, raw, signed_val, result);
     return result;
 }
 
-uint32_t tas5805m_double_to_q2_30(double value)
+uint32_t tas5805m_float_to_q2_30(float value)
 {
-    // Clamp to valid representable range
-    if (value > 3.999999) value = 3.999999;
-    if (value < -4.0)     value = -4.0;
+    if (value > 3.999999f) value = 3.999999f;
+    if (value < -4.0f)     value = -4.0f;
 
     int32_t fixed_val = (int32_t)(value * (1 << 30));
+    uint32_t le_val = tas5805m_swap_endian_32((uint32_t)fixed_val);
 
-    // Swap to little-endian for TAS registers
-    uint32_t le_val = ((fixed_val >> 24) & 0xFF) |
-                      ((fixed_val >> 8)  & 0xFF00) |
-                      ((fixed_val << 8)  & 0xFF0000) |
-                      ((fixed_val << 24) & 0xFF000000);
+    ESP_LOGD(TAG, "%s: value=%f -> fixed_val=%d, le_val=0x%08X",
+             __func__, value, fixed_val, le_val);
 
     return le_val;
 }
 
-double tas5805m_q2_30_to_db(uint32_t raw)
-{
-    double linear = tas5805m_q2_30_to_double(raw);
-    // if (linear <= 0.0) {
-    //     return -INFINITY;  // avoid log(0) or negative
-    // }
-    return 20.0 * log10(linear);
-}
+// Convert raw Q2.30 register to dB in tenths
+// int32_t tas5805m_q2_30_to_db10(uint32_t raw)
+// {
+//     float linear = tas5805m_q2_30_to_float(raw);
+//     return tas5805m_float_to_db10(linear);
+// }
