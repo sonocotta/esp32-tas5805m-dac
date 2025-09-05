@@ -16,10 +16,22 @@ private:
     // Handler function for the "eq" command
     static int eq_command_handler(int argc, char **argv)
     {
+        struct {
+            struct arg_str *channel;
+            struct arg_int *band;
+            struct arg_int *gain;
+            struct arg_end *end;
+        } eq_args;
+
+        eq_args.channel = arg_str0(NULL, NULL, "<channel>", "Channel: l=left, r=right");
+        eq_args.band = arg_int0(NULL, NULL, "<band>", "EQ band number (0-14)");
+        eq_args.gain = arg_int0(NULL, NULL, "<gain>", "EQ gain in dB (-12 to +12)");
+        eq_args.end = arg_end(1);   
+
         int nerrors = arg_parse(argc, argv, (void **)&eq_args);
         if (nerrors != 0)
         {
-            ESP_LOGE(TAG, "Error parsing arguments");
+            arg_print_errors(stderr, eq_args.end, argv[0]);
             return 1;
         }
 

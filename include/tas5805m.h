@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #define I2C_MASTER_NUM I2C_NUM_0               /*!< I2C port number for master dev */
 #define I2C_TAS5805M_MASTER_NUM I2C_MASTER_NUM /*!< I2C port number for master dev */
@@ -551,6 +551,28 @@ extern "C"
      *     - ESP_FAIL
      */
     esp_err_t tas5805m_set_mixer_gain(TAS5805M_MIXER_CHANNELS channel, uint32_t gain);
+
+    /**
+     * @brief Get the clipper gain of the TAS5805M (dB value)
+     *
+     * @param gain_db: Pointer to the gain variable, typically negative value
+     * @param makeup_left_db: Pointer to the makeup variable, typically positive value that less or equal than abs(gain)
+     * @param makeup_right_db: Pointer to the makeup variable, typically positive value that less or equal than abs(gain)
+     *
+     */
+    esp_err_t tas5805m_get_clipper_gain(double *gain_db, double *makeup_left_db, double *makeup_right_db);
+    
+    /**
+     * @brief Set the clipper gain of the TAS5805M (dB value)
+     *
+     * @param gain_db: The gain to set, typically negative value
+     * @param makeup_left_db: The makeup to set, typically positive value that less or equal than abs(gain)
+     * @param makeup_right_db: The makeup to set, typically positive value that less or equal than abs(gain)
+     * 
+     * Example: gain = -3dB, effectively smooth out upper 3Db of the signal and thus reducing overall gain by 3Db
+     * makeup = 3dB, effectively restoring overall clipper gain to 0Db
+     */ 
+    esp_err_t tas5805m_set_clipper_gain(double gain_db, double makeup_left_db, double makeup_right_db);
 
     /**
      * @brief Get the sample rate of the TAS5805M

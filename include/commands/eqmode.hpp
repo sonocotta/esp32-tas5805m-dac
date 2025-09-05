@@ -23,10 +23,19 @@ private:
             "BIAMP_OFF",
         };
 
+        struct
+        {
+            struct arg_int *mode;
+            struct arg_end *end;
+        } eq_args;
+
+        eq_args.mode = arg_int0(NULL, NULL, "<mode>", "EQ mode: 0=ON, 1=OFF, 2=BIAMP, 3=BIAMP_OFF");
+        eq_args.end = arg_end(1);
+
         int nerrors = arg_parse(argc, argv, (void **)&eq_args);
         if (nerrors != 0)
         {
-            ESP_LOGE(TAG, "Error parsing arguments");
+            arg_print_errors(stderr, eq_args.end, argv[0]);
             return 1;
         }
 

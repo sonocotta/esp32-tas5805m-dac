@@ -20,6 +20,7 @@
 #include "commands/modmode.hpp"
 #include "commands/volume.hpp"
 #include "commands/volume100.hpp"
+#include "commands/clipper.h"
 #endif
 
 class CommandLine
@@ -28,7 +29,7 @@ private:
 
 
 #ifdef CONFIG_DAC_TAS5805M
-    const static int commands_size = 12;
+    const static int commands_size = 13;
 #else
     const static int commands_size = 0;
 #endif
@@ -36,6 +37,7 @@ private:
     Command *commands[commands_size] = {
         #ifdef CONFIG_DAC_TAS5805M
         new AmpStateCommand(),
+        new ClipperCommand(),
         new DacModeCommand(),
         new EqCommand(),
         new EqModeCommand(),
