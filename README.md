@@ -979,9 +979,8 @@ const char* freq_str = tas5805m_map_fs_freq(freq);
 
 ## To Do
 
-- [ ] - Implement soft clipping controls
-- [ ] - Spread spectrum enable control
-- [ ] - Test different modulation modes vs Switching frequency vs PVDD in terms of efficiency
+- [x] - Implement soft clipping controls
+- [x] - Test different modulation modes vs Switching frequency vs PVDD in terms of efficiency
 - [x] - Implement mixer granular controls
 - [ ] - Digital audio level read control
 
