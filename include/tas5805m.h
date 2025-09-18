@@ -621,6 +621,18 @@ extern "C"
      */
     esp_err_t tas5805m_get_automute_state(bool *is_r_muted, bool *is_l_muted);
 
+
+    /**
+     * @brief Get the level meter of the TAS5805M
+     * 
+     * @param left: Pointer to the left level meter (0-0xFFFFFFFF)
+     * @param right: Pointer to the right level meter (0-0xFFFFFFFF)
+     * @return
+     *    - ESP_OK
+     *    - ESP_FAIL
+     */
+    esp_err_t tas5805m_get_level_meter(uint32_t *left, uint32_t *right);
+
     /**
      * @brief Get the faults of the TAS5805M
      *

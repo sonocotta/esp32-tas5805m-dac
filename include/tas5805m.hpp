@@ -225,6 +225,39 @@ public:
         return tas5805m_get_automute_state(is_r_muted, is_l_muted);
     };
 
+    esp_err_t getLevelMeterRaw(uint32_t *left, uint32_t *right)
+    {
+        return tas5805m_get_level_meter(left, right);
+    };
+
+    esp_err_t getLevelMeter(float *left, float *right)
+    {
+        uint32_t left_raw, right_raw;
+        esp_err_t ret = tas5805m_get_level_meter(&left_raw, &right_raw);
+        if (ret == ESP_OK) {
+            *left = tas5805m_q1_31_to_float(left_raw);
+            *right = tas5805m_q1_31_to_float(right_raw);    
+        }
+        return ret;
+    };
+
+    esp_err_t getLevelMeterDb(int32_t *left, int32_t *right)
+    {
+        uint32_t left_raw, right_raw;
+        esp_err_t ret = tas5805m_get_level_meter(&left_raw, &right_raw);
+        if (ret == ESP_OK) {
+            int32_t left_db = tas5805m_float_to_db10(tas5805m_q1_31_to_float(left_raw));
+            int32_t right_db = tas5805m_float_to_db10(tas5805m_q1_31_to_float(right_raw));
+            if (left_db < -1200) left_db = -1200; 
+            if (right_db < -1200) right_db = -1200;
+            if (left_db > 0) left_db = 0;
+            if (right_db > 0) right_db = 0;
+            *left = left_db;
+            *right = right_db;
+        }
+        return ret;
+    };
+
     esp_err_t getFaultState(TAS5805M_FAULT *fault)
     {
         return tas5805m_get_faults(fault);

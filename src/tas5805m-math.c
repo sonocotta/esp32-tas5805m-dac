@@ -107,3 +107,13 @@ uint32_t tas5805m_float_to_q2_30(float value)
 //     float linear = tas5805m_q2_30_to_float(raw);
 //     return tas5805m_float_to_db10(linear);
 // }
+
+float tas5805m_q1_31_to_float(uint32_t raw)
+{
+    uint32_t val = tas5805m_swap_endian_32(raw);
+    int32_t signed_val = (int32_t)val;
+    float result = (float)signed_val / 2147483648.0f; // 2^31
+    ESP_LOGD(TAG, "%s: raw=0x%08X, signed_val=%d -> result=%f",
+             __func__, raw, signed_val, result);
+    return result;
+}
