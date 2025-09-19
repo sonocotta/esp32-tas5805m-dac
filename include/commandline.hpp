@@ -21,6 +21,7 @@
 #include "commands/volume.hpp"
 #include "commands/volume100.hpp"
 #include "commands/clipper.h"
+#include "commands/levelmeter.hpp"
 #endif
 
 class CommandLine
@@ -29,7 +30,7 @@ private:
 
 
 #ifdef CONFIG_DAC_TAS5805M
-    const static int commands_size = 13;
+    const static int commands_size = 14;
 #else
     const static int commands_size = 0;
 #endif
@@ -44,6 +45,7 @@ private:
         new EqProfileCommand(),
         new FaultCommand(),
         new GainCommand(),
+        new LevelMeterCommand(),
         new MixerCommand(),
         new MixerModeCommand(),
         new ModulationCommand(),

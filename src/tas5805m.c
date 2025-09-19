@@ -885,7 +885,6 @@ esp_err_t tas5805m_set_clipper_gain(int32_t gain_db10, int32_t makeup_left_db10,
 
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_5, TAS5805M_REG_BOOK_5_CLIPPER_PAGE);
   
-
   int ret = ESP_OK;
   uint8_t address = TAS5805M_REG_CLIPPER_GAIN;
   ret = ret | tas5805m_write_bytes(&address, 1, (uint8_t *)&reg_value0, sizeof(uint32_t));
@@ -959,6 +958,25 @@ esp_err_t tas5805m_get_automute_state(bool *is_r_muted, bool *is_l_muted)
     *is_l_muted = (reg_value & 0x01);
     *is_r_muted = (reg_value & 0x02);
   }
+  return ret;
+}
+
+esp_err_t tas5805m_get_level_meter(uint32_t *left, uint32_t *right)
+{
+  uint32_t reg_value[2];
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_4, TAS5805M_REG_BOOK_4_LEVEL_METER_PAGE);
+  int ret = tas5805m_read_bytes(TAS5805M_REG_LEVEL_METER_LEFT, reg_value, sizeof(reg_value));
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
+  } else {
+    ESP_LOGD(TAG, "%s: Level meter left=0x%08X, right=0x%08X", __func__, reg_value[0], reg_value[1]);
+    *left = (int32_t)reg_value[0];
+    *right = (int32_t)reg_value[1];
+  }
+
+  TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_CONTROL_PORT, TAS5805M_REG_PAGE_ZERO); 
+
   return ret;
 }
 

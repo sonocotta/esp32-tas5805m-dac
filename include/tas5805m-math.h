@@ -7,7 +7,16 @@
 extern "C" {
 #endif
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
+
+/**
+ * @brief Convert float to dB in tenths
+ * @param linear Linear gain as a float.
+ * @return Value in decibels (dB) in tenths.
+ */ 
+
+int32_t tas5805m_float_to_db10(float linear);
 
 /**
  * @brief Swap the endianness of a 32-bit integer.
@@ -64,6 +73,14 @@ float tas5805m_q2_30_to_float(uint32_t raw);
  * @return Q2.30 fixed-point value as a 32-bit unsigned integer.
  */
 uint32_t tas5805m_float_to_q2_30(float value);
+
+/**
+ * @brief Convert a Q1.31 fixed-point value to a float.
+ *
+ * @param raw Q1.31 value as a 32-bit unsigned integer.
+ * @return float-precision floating point representation.
+ */
+float tas5805m_q1_31_to_float(uint32_t raw);
 
 #ifdef __cplusplus
 }

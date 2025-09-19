@@ -70,6 +70,9 @@ Work in progress
     - [Getting and Clearing Fault States](#getting-and-clearing-fault-states)
     - [Decoding Fault Errors](#decoding-fault-errors)
     - [Mapping Functions](#mapping-functions)
+  - [Level Meter and Automute Functions](#level-meter-and-automute-functions)
+    - [Get Level Meter](#get-level-meter)
+    - [Get Automute State](#get-automute-state)
   - [To Do](#to-do)
   - [License](#license)
   - [Contributing](#contributing)
@@ -958,6 +961,59 @@ TAS5805M_FAULT fault = { .err0 = 1, .err1 = 0, .err2 = 0, .ot_warn = 1 };
 tas5805m_decode_faults(fault);
 ```
 ### Mapping Functions
+
+## Level Meter and Automute Functions
+
+These functions allow you to read the output signal level and automute status from the TAS5805M amplifier:
+
+### Get Level Meter
+
+To extract raw value of the 32-bit register
+
+```cpp
+uint32_t left, right;
+esp_err_t ret = tas5805m_get_level_meter(&left, &right);
+if (ret == ESP_OK) {
+    printf("Level meter - Left: %u, Right: %u\n", left, right);
+}
+```
+
+To interpret it as float in the. [0..1] range you may use helper functions (in the `tas5805m.hpp` wrapper)
+
+```cpp
+uint32_t left_raw, right_raw;
+esp_err_t ret = tas5805m_get_level_meter(&left_raw, &right_raw);
+float left = tas5805m_q1_31_to_float(left_raw);
+float right = tas5805m_q1_31_to_float(right_raw);    
+```
+
+Same goes for deci-deci-bell value (in the range of [-1200..0] ddB)
+
+```cpp
+esp_err_t ret = tas5805m_get_level_meter(&left_raw, &right_raw);
+int32_t left_db = tas5805m_float_to_db10(tas5805m_q1_31_to_float(left_raw));
+int32_t right_db = tas5805m_float_to_db10(tas5805m_q1_31_to_float(right_raw));
+/* optionally trim
+if (left_db < -1200) left_db = -1200; 
+if (right_db < -1200) right_db = -1200;
+if (left_db > 0) left_db = 0;
+if (right_db > 0) right_db = 0; */
+int32_t left = left_db;
+int32_t right = right_db;
+```
+
+
+### Get Automute State
+
+```cpp
+bool l_muted, r_muted;
+esp_err_t ret = tas5805m_get_automute_state(&r_muted, &l_muted);
+if (ret == ESP_OK) {
+    printf("Automute - Left: %s, Right: %s\n", l_muted ? "Muted" : "Active", r_muted ? "Muted" : "Active");
+}
+```
+
+These functions are useful for monitoring the output signal and detecting if the amplifier has muted due to low signal levels.
 
 These functions convert internal enums to human-readable strings for logging or UI.
 
