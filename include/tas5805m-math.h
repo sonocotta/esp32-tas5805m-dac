@@ -19,6 +19,14 @@ extern "C" {
 int32_t tas5805m_float_to_db10(float linear);
 
 /**
+ * @brief Convert dB in tenths to float
+ * @param db10 Value in decibels (dB) in tenths.
+ * @return Linear gain as a float.
+ */
+
+float tas5805m_db10_to_float(int32_t db10);
+
+/**
  * @brief Swap the endianness of a 32-bit integer.
  *
  * @param val Input 32-bit integer.

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "driver/i2c_master.h"
 
 #include "../eq/tas5805m_eq.h"
 
@@ -148,6 +149,8 @@ extern "C"
         TAS5805M_CTRL_STATE state;
         TAS5805M_MIXER_MODE mixer_mode;
         TAS5805M_EQ_PROFILE eq_profile[2];
+        i2c_master_bus_handle_t i2c_bus;
+        i2c_master_dev_handle_t i2c_device;
     } TAS5805_STATE;
 
 // Analog gain
@@ -205,7 +208,7 @@ extern "C"
      *     - ESP_OK
      *     - ESP_FAIL
      */
-    esp_err_t tas5805m_init();
+    esp_err_t tas5805m_init(gpio_num_t i2c_sda_pin, gpio_num_t i2c_scl_pin);
     /**
      * @brief Deinitialize TAS5805 codec chip
      *
