@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "esp_log.h"
 
@@ -80,28 +81,12 @@ TAS5805_STATE tas5805m_state = {
 esp_err_t tas5805m_read_byte(uint8_t register_name, uint8_t *data)
 {
 
-  int ret;
-  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-  i2c_master_write_byte(cmd, register_name, ACK_CHECK_EN);
-  i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
-  i2c_cmd_link_delete(cmd);
-
+  int ret = i2c_master_transmit_receive(tas5805m_state.i2c_device, &register_name, sizeof(register_name), data, 1, pdMS_TO_TICKS(1000));
+  
   if (ret != ESP_OK)
   {
     ESP_LOGW(TAG, "%s: I2C error %s", __func__, esp_err_to_name(ret));
   }
-
-  vTaskDelay(1 / portTICK_RATE_MS);
-  cmd = i2c_cmd_link_create();
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | READ_BIT, ACK_CHECK_EN);
-  i2c_master_read_byte(cmd, data, NACK_VAL);
-  i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
-  i2c_cmd_link_delete(cmd);
 
   ESP_LOGV(TAG, "%s: 0x%02x = 0x%02x", __func__, register_name, *data);
 
@@ -123,22 +108,16 @@ esp_err_t tas5805m_write_byte(uint8_t register_name, uint8_t value)
 {
   ESP_LOGV(TAG, "%s: 0x%02x <- 0x%02x", __func__, register_name, value);
   int ret = 0;
-  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-  i2c_master_write_byte(cmd, register_name, ACK_CHECK_EN);
-  i2c_master_write_byte(cmd, value, ACK_CHECK_EN);
-  i2c_master_stop(cmd);
 
-  ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+  uint8_t data[2] = {register_name, value};
+
+  ret = i2c_master_transmit(tas5805m_state.i2c_device, data, sizeof(data), pdMS_TO_TICKS(1000));
 
   // Check if ret is OK
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "%s: error during I2C transmission: %s", __func__, esp_err_to_name(ret));
   }
-
-  i2c_cmd_link_delete(cmd);
 
   return ret;
 }
@@ -153,13 +132,17 @@ esp_err_t tas5805m_write_bytes(uint8_t *reg,
     ESP_LOGV(TAG, "%s: 0x%02x", __func__, data[i]);
   }
 
-  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-  ret |= i2c_master_start(cmd);
-  ret |= i2c_master_write_byte(cmd, TAS5805M_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-  ret |= i2c_master_write(cmd, reg, regLen, ACK_CHECK_EN);
-  ret |= i2c_master_write(cmd, data, datalen, ACK_CHECK_EN);
-  ret |= i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_TAS5805M_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+  uint8_t *buffer = malloc(regLen + datalen);
+  if (buffer == NULL)
+  {
+    ESP_LOGE(TAG, "%s: Failed to allocate memory for I2C transmission", __func__);
+    return ESP_ERR_NO_MEM;
+  }
+
+  memcpy(buffer, reg, regLen);
+  memcpy(buffer + regLen, data, datalen);
+
+  ret = i2c_master_transmit(tas5805m_state.i2c_device, buffer, regLen + datalen, pdMS_TO_TICKS(1000));
 
   // Check if ret is OK
   if (ret != ESP_OK)
@@ -167,8 +150,7 @@ esp_err_t tas5805m_write_bytes(uint8_t *reg,
     ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
   }
 
-  i2c_cmd_link_delete(cmd);
-
+  free(buffer);
   return ret;
 }
 
@@ -185,7 +167,7 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
       // Used in legacy applications.  Ignored here.
       break;
     case CFG_META_DELAY:
-      vTaskDelay(conf_buf[i].value / portTICK_RATE_MS);
+      vTaskDelay(conf_buf[i].value / portTICK_PERIOD_MS);
       break;
     case CFG_META_BURST:
       ret = tas5805m_write_bytes((unsigned char *)(&conf_buf[i + 1].offset), 1,
@@ -218,9 +200,8 @@ static esp_err_t tas5805m_transmit_registers(const tas5805m_cfg_reg_t *conf_buf,
 
 /* Public API */
 // Inits the TAS5805M
-esp_err_t tas5805m_init()
+esp_err_t tas5805m_init(gpio_num_t i2c_sda_pin, gpio_num_t i2c_scl_pin)
 {
-  /// i2c_master_init();
 
   /* Register the PDN pin as output and write 1 to enable the TAS chip */
   gpio_config_t io_conf;
@@ -232,16 +213,38 @@ esp_err_t tas5805m_init()
   ESP_LOGI(TAG, "%s: Running PWR ON sequence on pin: %d", __func__, TAS5805M_GPIO_PDN);
   gpio_config(&io_conf);
   gpio_set_level(TAS5805M_GPIO_PDN, 0);
-  vTaskDelay(20 / portTICK_RATE_MS);
+  vTaskDelay(pdMS_TO_TICKS(20));
   gpio_set_level(TAS5805M_GPIO_PDN, 1);
-  vTaskDelay(100 / portTICK_RATE_MS);
+  vTaskDelay(pdMS_TO_TICKS(100));
+
+  // Initialize the I2C driver
+
+  i2c_master_bus_config_t bus_conf = {
+      .clk_source = I2C_CLK_SRC_DEFAULT,
+      .i2c_port = -1, // Automatically select the I2C port
+      .sda_io_num = i2c_sda_pin,
+      .scl_io_num = i2c_scl_pin,
+      .glitch_ignore_cnt = 7,
+      .flags.enable_internal_pullup = true,
+  };
+
+  ESP_ERROR_CHECK(i2c_new_master_bus(&bus_conf, &tas5805m_state.i2c_bus));
+
+  i2c_device_config_t dev_conf = {
+      .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+      .device_address = TAS5805M_ADDRESS,
+      .scl_speed_hz = 100000,
+  };
+
+  ESP_ERROR_CHECK(i2c_master_bus_add_device(tas5805m_state.i2c_bus, &dev_conf, &tas5805m_state.i2c_device));
+
   //
   // I2S needs to be initialized before this happens
   //
   // i2s_driver_start(TAS5805M_I2S_NUM);
   // Once I2S clocks are stable, set the device into HiZ state and enable DSP via the I2C control port.
   ESP_ERROR_CHECK(tas5805m_set_state(TAS5805M_CTRL_HI_Z));
-  vTaskDelay(20 / portTICK_RATE_MS);
+  vTaskDelay(20 / portTICK_PERIOD_MS);
   // 5. Wait 5ms at least. Then initialize the DSP Coefficient, then set the device to Play state.
   int ret = tas5805m_transmit_registers(
       tas5805m_registers,
@@ -318,6 +321,13 @@ esp_err_t tas5805m_get_volume_pct(uint8_t *vol)
 
 esp_err_t tas5805m_deinit(void)
 {
+
+  i2c_master_bus_rm_device(tas5805m_state.i2c_device);
+  i2c_del_master_bus(tas5805m_state.i2c_bus);
+
+  tas5805m_state.i2c_device = NULL;
+  tas5805m_state.i2c_bus = NULL;
+
   gpio_set_level(TAS5805M_GPIO_PDN, 0);
   return ESP_OK;
 }
@@ -965,7 +975,7 @@ esp_err_t tas5805m_get_level_meter(uint32_t *left, uint32_t *right)
 {
   uint32_t reg_value[2];
   TAS5805M_SET_BOOK_AND_PAGE(TAS5805M_REG_BOOK_4, TAS5805M_REG_BOOK_4_LEVEL_METER_PAGE);
-  int ret = tas5805m_read_bytes(TAS5805M_REG_LEVEL_METER_LEFT, reg_value, sizeof(reg_value));
+  int ret = tas5805m_read_bytes(TAS5805M_REG_LEVEL_METER_LEFT, (uint8_t *)reg_value, sizeof(reg_value));
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "%s: Error during I2C transmission: %s", __func__, esp_err_to_name(ret));
